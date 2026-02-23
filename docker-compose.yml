@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # 1. The Selenium Web Scraper
+  scraper-service:
+    build: 
+      context: ./scraper-service
+    ports:
+      - "8000:8000"
+    volumes:
+      # This shared volume allows the Scraper to save the image...
+      - shared-exports:/exports
+    environment:
+      - PYTHONUNBUFFERED=1
+
+  # 2. The AI Inference Engine (Local Hugging Face Space)
+  ai-service:
+    build: 
+      context: ./ai-service
+    ports:
+      - "7860:7860"
+    environment:
+      - PYTHONUNBUFFERED=1
+
+  # 3. The Node.js API Orchestrator
+  backend:
+    build: 
+      context: ./backend
+    ports:
+      - "5000:5000"
+    volumes:
+      # ...and allows Node.js to read that exact same image to send to the AI
+      - shared-exports:/exports
+    environment:
+      - PORT=5000
+      # Docker networking maps these URLs automatically using the service names
+      - SCRAPER_API_URL=http://scraper-service:8000/api/capture
+      - AI_SERVICE_URL=http://ai-service:7860/analyze
+    depends_on:
+      - scraper-service
+      - ai-service
+
+  # 4. The React User Dashboard
+  frontend:
+    build: 
+      context: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000/api
+    depends_on:
+      - backend
+    stdin_open: true
+    tty: true
+
+# Define the shared volume
+volumes:
+  shared-exports:
