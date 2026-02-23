@@ -18,32 +18,26 @@ A web-based tool that uses a transformer-based Vision Language Model (LayoutLM) 
 To run the project without Docker, you will need to start the three core services in separate terminal windows.
 
 **1. Start the Scraper Service (Python)**
-\`\`\`bash
-cd scraper-service
-pip install -r requirements.txt
-uvicorn scraper_api:app --host 127.0.0.1 --port 8000
-\`\`\`
+`cd scraper-service`
+`pip install -r requirements.txt`
+`uvicorn scraper_api:app --host 127.0.0.1 --port 8000`
+
 
 **2. Start the Orchestrator (Node.js)**
 \`\`\`bash
-cd backend-node
-npm install
-npx nodemon src/server.js
-\`\`\`
+`cd backend`
+`npm install`
+`npx nodemon src/server.js`
+
 
 **3. Start the Frontend (React)**
-\`\`\`bash
-cd frontend-react
-npm install
-npm start
-\`\`\`
+`cd frontend-react`
+`npm install`
+`npm start`
 The application will be available at `http://localhost:3000`.
 
 ## How to Run with Docker
-*(WIP)*
-\`\`\`bash
-docker-compose up --build
-\`\`\`
+`docker-compose up --build`
 
 ## temp folders for testing 
 for the testing phase or scraper the png files will be stored in the local exports dir of project
