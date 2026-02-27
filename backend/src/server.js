@@ -3,58 +3,28 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
-const FormData = require('form-data');
 const fs = require('fs');
 const path = require('path');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Configuration for your Python Microservices
-// In production (Docker), these would be e.g., 'http://scraper-service:8000'
 const SCRAPER_API_URL = process.env.SCRAPER_API_URL || 'http://127.0.0.1:8000/api/capture';
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://127.0.0.1:7860/analyze';
+// AI_SERVICE_URL removed temporarily for local testing
 
-// Serve the exports folder statically so React can load the images
-// This assumes your exports folder is in the root directory, two levels up from this file
-app.use('/exports', express.static(path.join(__dirname, '../../exports')));
+// Initialize Gemini
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// ============================================================================
-// 1. TEMPORARY TEST ROUTE (Bypasses AI to test Scraper)
-// ============================================================================
-app.post('/api/test-scraper', async (req, res) => {
-    const { targetUrl } = req.body;
+// Ensure exports directory exists
+const exportsDir = path.join(__dirname, '../../exports');
+if (!fs.existsSync(exportsDir)) {
+    fs.mkdirSync(exportsDir, { recursive: true });
+}
 
-    if (!targetUrl) return res.status(400).json({ error: "URL is required" });
+app.use('/exports', express.static(exportsDir));
 
-    console.log(`\n[Test] Requesting screenshot for: ${targetUrl}`);
-
-    try {
-        // Call the Python Scraper
-        const scraperResponse = await axios.post(SCRAPER_API_URL, { target_url: targetUrl });
-        const screenshotPath = scraperResponse.data.file_path;
-        
-        console.log(`[Test] Success! Image saved to: ${screenshotPath}`);
-
-        // Extract just the filename (e.g., "site_audit_123.png")
-        const fileName = path.basename(screenshotPath);
-        
-        // Return the URL so React can display it
-        res.json({ 
-            success: true, 
-            imageUrl: `http://localhost:5000/exports/${fileName}` 
-        });
-
-    } catch (error) {
-        console.error("Scraper Test Failed:", error.message);
-        res.status(500).json({ error: "Scraper service failed." });
-    }
-});
-
-// ============================================================================
-// 2. FULL AUDIT ROUTE (Calls Scraper, then LayoutLM AI)
-// ============================================================================
 app.post('/api/audit', async (req, res) => {
     const { targetUrl } = req.body;
 
@@ -62,51 +32,97 @@ app.post('/api/audit', async (req, res) => {
         return res.status(400).json({ error: "Please provide a targetUrl." });
     }
 
-    console.log(`\n[1] Starting Audit for: ${targetUrl}`);
+    console.log(`\n[1] Starting Local Audit Test for: ${targetUrl}`);
 
     try {
+        // --- 1. CAPTURE ---
         console.log(`[2] Requesting screenshot from Scraper Service...`);
-        const scraperResponse = await axios.post(SCRAPER_API_URL, {
-            target_url: targetUrl
-        });
-
+        const scraperResponse = await axios.post(SCRAPER_API_URL, { target_url: targetUrl });
         const screenshotPath = scraperResponse.data.file_path;
+        const dimensions = scraperResponse.data.dimensions;
         console.log(`[3] Screenshot captured successfully: ${screenshotPath}`);
 
         if (!fs.existsSync(screenshotPath)) {
             throw new Error(`Screenshot not found at ${screenshotPath}`);
         }
 
-        console.log(`[4] Forwarding screenshot and URL to AI Inference Engine...`);
+        // --- 2. GEMINI EXTRACTION ---
+        console.log(`[4] Sending image to Gemini 2.5 Flash for OCR and spatial detection...`);
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
         
-        const formData = new FormData();
-        formData.append('target_url', targetUrl);
-        formData.append('screenshot', fs.createReadStream(screenshotPath));
-
-        const aiResponse = await axios.post(AI_SERVICE_URL, formData, {
-            headers: {
-                ...formData.getHeaders(),
+        const imageData = {
+            inlineData: {
+                data: Buffer.from(fs.readFileSync(screenshotPath)).toString("base64"),
+                mimeType: "image/png",
             },
-            maxContentLength: Infinity,
-            maxBodyLength: Infinity
-        });
+        };
 
-        console.log(`[5] AI Audit Complete. Returning report to Client.`);
-        res.json(aiResponse.data);
+        const prompt = `ACT AS: A Professional UI Document Parser for LayoutLM Training.
+TASK: Perform OCR and spatial detection on this UI.
+
+LABELS TO IDENTIFY:
+- 'text_element': Standard UI text/labels.
+- 'action_button': Buttons, links, or clickable UI controls.
+- 'overlay_content': Text inside popups or cookie banners.
+- 'deceptive_element': Any element that looks intentionally hidden or misleading.
+
+OUTPUT FORMAT:
+Return ONLY a raw JSON array of objects.
+Each object: {'text': 'string', 'label': 'one_of_the_labels_above', 'box_2d': [ymin, xmin, ymax, xmax]}
+Normalize coordinates to 0-1000.
+DO NOT include markdown fences.`;
+
+        const result = await model.generateContent([prompt, imageData]);
+        let responseText = result.response.text();
+        
+        // Safety net: Strip markdown fences if the model ignores the prompt instruction
+        responseText = responseText.replace(/```json|```/gi, '').trim();
+        
+        const geminiData = JSON.parse(responseText);
+
+        // --- 3. FORMAT FOR LAYOUTLM & SAVE LOCALLY ---
+        console.log(`[5] Processing coordinates and saving locally...`);
+        
+        // Transform the data to swap [ymin, xmin, ymax, xmax] to [xmin, ymin, xmax, ymax]
+        const processedData = geminiData.map(item => ({
+            text: item.text,
+            label: item.label,
+            // LayoutLMv3 expects [x1, y1, x2, y2]
+            layout_box: [
+                item.box_2d[1], // xmin
+                item.box_2d[0], // ymin
+                item.box_2d[3], // xmax
+                item.box_2d[2]  // ymax
+            ]
+        }));
+
+        // Generate a unique filename and save to the exports folder
+        const timestamp = Date.now();
+        const jsonFileName = `audit_data_${timestamp}.json`;
+        const jsonFilePath = path.join(exportsDir, jsonFileName);
+        
+        fs.writeFileSync(jsonFilePath, JSON.stringify(processedData, null, 2));
+        console.log(`[6] Local Test Complete. Data saved to: ${jsonFilePath}`);
+        
+        // Return the extracted data to the React frontend
+        res.json({
+            success: true,
+            message: "Local extraction successful",
+            screenshot_used: screenshotPath,
+            dimensions: dimensions, // Send to React
+            saved_json_path: jsonFilePath,
+            extracted_elements_count: processedData.length,
+            data: processedData
+        });
 
     } catch (error) {
         console.error("[-] Audit Pipeline Failed:");
-        if (error.response) {
-            console.error("Service Error:", error.response.data);
-            res.status(error.response.status).json({ error: error.response.data });
-        } else {
-            console.error(error.message);
-            res.status(500).json({ error: "Internal Server Error during the audit pipeline." });
-        }
+        console.error(error.message);
+        res.status(500).json({ error: "Internal Server Error during the local audit pipeline." });
     }
 });
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-    console.log(`🚀 Node.js Orchestrator running on http://localhost:${PORT}`);
+    console.log(`Node.js Orchestrator running on http://localhost:${PORT}`);
 });
