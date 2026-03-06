@@ -26,17 +26,11 @@ venv/
 ENV/
 
 # ====================================================================
-# AI & Machine Learning Weights (Crucial to ignore for GitHub)
+# AI & Machine Learning Weights
 # ====================================================================
-# Ignore downloaded/fine-tuned LayoutLM weights (keep them on Hugging Face)
 ai-service/model_weights/
-*.pt
-*.bin
-*.ckpt
-*.safetensors
-*.onnx
-*.h5
 .huggingface/
+# NOTE: *.pt, *.h5, *.bin etc. are tracked via Git LFS (not ignored)
 
 # ====================================================================
 # Shared Data Volumes & Project Specific

@@ -9,7 +9,7 @@ import os
 
 app = FastAPI(title="Web Scraper Service")
 
-EXPORT_DIR = os.path.abspath(os.path.join(os.getcwd(), "..", "exports"))
+EXPORT_DIR = os.environ.get("EXPORT_DIR", os.path.abspath(os.path.join(os.getcwd(), "..", "exports")))
 os.makedirs(EXPORT_DIR, exist_ok=True)
 
 class ScrapeRequest(BaseModel):

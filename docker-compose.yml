@@ -12,6 +12,7 @@ services:
       - shared-exports:/exports
     environment:
       - PYTHONUNBUFFERED=1
+      - EXPORT_DIR=/exports
 
   # 2. The AI Inference Engine (Local Hugging Face Space)
   ai-service:

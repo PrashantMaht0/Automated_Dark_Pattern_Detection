@@ -1,0 +1,141 @@
+{
+  "url": "https://copyleaks.com/ai-content-detector",
+  "time_seconds": 22.605173349380493,
+  "debug": {
+    "chunks_total": 147,
+    "gated_kept": 19,
+    "kept": 18,
+    "gate_threshold": 0.6,
+    "router_min_conf": 0.35,
+    "binary_model_dir": "artifacts\\roberta_scraped_model",
+    "router_path": "artifacts\\pattern_router.joblib"
+  },
+  "results": [
+    {
+      "pattern": "Urgency",
+      "text": "Does Copyleaks offer a free",
+      "gate_dp_prob": 0.9958668947219849,
+      "router_confidence": 0.5201663755041379,
+      "final_score": 0.5180164731120958
+    },
+    {
+      "pattern": "Urgency",
+      "text": "Detector detect? Does Copyleaks offer a free",
+      "gate_dp_prob": 0.9899877905845642,
+      "router_confidence": 0.5201663755041379,
+      "final_score": 0.5149583608217223
+    },
+    {
+      "pattern": "Forced Continuity / Subscription",
+      "text": "detection engine—free for up to 25,000 characters per scan.",
+      "gate_dp_prob": 0.9995311498641968,
+      "router_confidence": 0.4584135645204372,
+      "final_score": 0.4581986372584577
+    },
+    {
+      "pattern": "Forced Continuity / Subscription",
+      "text": "detector on the market. Get Even More Scans with a Free Account Create a free account to unlock more monthly credits for scans. It’s the highest free scan allowance you can get. How Our",
+      "gate_dp_prob": 0.999204695224762,
+      "router_confidence": 0.4547729483169002,
+      "final_score": 0.4544112652194547
+    },
+    {
+      "pattern": "Forced Continuity / Subscription",
+      "text": "23rd St., 7th Fl New York,",
+      "gate_dp_prob": 0.9977960586547852,
+      "router_confidence": 0.44995669663169235,
+      "final_score": 0.4489650184644295
+    },
+    {
+      "pattern": "Forced Continuity / Subscription",
+      "text": "Ready for even deeper insights? Upgrade to a Copyleaks subscription and unlock",
+      "gate_dp_prob": 0.9757463932037354,
+      "router_confidence": 0.44726721907462447,
+      "final_score": 0.43641937581032975
+    },
+    {
+      "pattern": "Forced Continuity / Subscription",
+      "text": "What models can the",
+      "gate_dp_prob": 0.97617107629776,
+      "router_confidence": 0.44058408357536694,
+      "final_score": 0.43008543906342817
+    },
+    {
+      "pattern": "Forced Continuity / Subscription",
+      "text": "Why is there a minimum and maximum text requirement for some",
+      "gate_dp_prob": 0.9993041753768921,
+      "router_confidence": 0.4251770030870215,
+      "final_score": 0.4248811544590943
+    },
+    {
+      "pattern": "Forced Continuity / Subscription",
+      "text": "Detector? Why is there a minimum and maximum text requirement for some",
+      "gate_dp_prob": 0.9983648657798767,
+      "router_confidence": 0.4251770030870215,
+      "final_score": 0.42448178161966443
+    },
+    {
+      "pattern": "Forced Continuity / Subscription",
+      "text": "Detection Tool With over 99% accuracy and an industry-low .03% false positive rate, Copyleaks leads the field in trusted detection. Highest Free Scan Limit Scan up to 25,000 characters for free—more than any other major",
+      "gate_dp_prob": 0.9991463422775269,
+      "router_confidence": 0.4200402617837993,
+      "final_score": 0.4196816911705779
+    },
+    {
+      "pattern": "Forced Continuity / Subscription",
+      "text": "Portuguese 99.95% (human), 93.08%",
+      "gate_dp_prob": 0.9983578324317932,
+      "router_confidence": 0.415736364528434,
+      "final_score": 0.4150536557536812
+    },
+    {
+      "pattern": "Forced Continuity / Subscription",
+      "text": "German 99.94% (human), 95.63%",
+      "gate_dp_prob": 0.9992015957832336,
+      "router_confidence": 0.4093578357048025,
+      "final_score": 0.40903100268260945
+    },
+    {
+      "pattern": "Forced Continuity / Subscription",
+      "text": "Detector. Generous scan limit You can scan up to 25,000 characters without logging in, a higher limit than most major",
+      "gate_dp_prob": 0.9993958473205566,
+      "router_confidence": 0.4001424998384185,
+      "final_score": 0.39990075267498193
+    },
+    {
+      "pattern": "Forced Continuity / Subscription",
+      "text": "Spanish 99.85% (human), 98.02%",
+      "gate_dp_prob": 0.9992375373840332,
+      "router_confidence": 0.3979427111366346,
+      "final_score": 0.39763929469609643
+    },
+    {
+      "pattern": "Forced Continuity / Subscription",
+      "text": "Italian 99.88% (human), 97.00%",
+      "gate_dp_prob": 0.9990993738174438,
+      "router_confidence": 0.3930362906035307,
+      "final_score": 0.3926823118295184
+    },
+    {
+      "pattern": "Forced Continuity / Subscription",
+      "text": "French 99.88% (human), 96.18%",
+      "gate_dp_prob": 0.9990853071212769,
+      "router_confidence": 0.3914333151471959,
+      "final_score": 0.3910752738813358
+    },
+    {
+      "pattern": "Forced Continuity / Subscription",
+      "text": "detection work? What models can the",
+      "gate_dp_prob": 0.8507681488990784,
+      "router_confidence": 0.4287493192553462,
+      "final_score": 0.3647662646846109
+    },
+    {
+      "pattern": "Forced Continuity / Subscription",
+      "text": "Skip to content Products Solutions Pricing Resources Login Try it Now Get a Demo",
+      "gate_dp_prob": 0.7603979706764221,
+      "router_confidence": 0.44353502276941575,
+      "final_score": 0.3372631312377844
+    }
+  ]
+}

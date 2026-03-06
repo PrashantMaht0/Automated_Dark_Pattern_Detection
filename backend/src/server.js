@@ -88,7 +88,8 @@ app.post('/api/audit', async (req, res) => {
                 ...formData.getHeaders(),
             },
             maxContentLength: Infinity,
-            maxBodyLength: Infinity
+            maxBodyLength: Infinity,
+            timeout: 120000,  // 2 minutes - models take time to load
         });
 
         console.log(`[5] AI Audit Complete. Returning report to Client.`);
@@ -98,10 +99,11 @@ app.post('/api/audit', async (req, res) => {
         console.error("[-] Audit Pipeline Failed:");
         if (error.response) {
             console.error("Service Error:", error.response.data);
-            res.status(error.response.status).json({ error: error.response.data });
+            const detail = error.response.data?.detail || error.response.data?.error || JSON.stringify(error.response.data);
+            res.status(error.response.status).json({ error: detail });
         } else {
             console.error(error.message);
-            res.status(500).json({ error: "Internal Server Error during the audit pipeline." });
+            res.status(500).json({ error: error.message || "Internal Server Error during the audit pipeline." });
         }
     }
 });

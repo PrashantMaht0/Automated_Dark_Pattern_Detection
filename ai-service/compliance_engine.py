@@ -90,27 +90,35 @@ class ComplianceAuditor:
             confidence = detection.get("confidence", 1.0)
             bbox = detection.get("box_2d")
 
-            # Only process if we have a legal mapping and the AI is reasonably confident
-            if label in REGULATORY_MAP and confidence > 0.65:
+            # Process if we have a legal mapping and confidence exceeds threshold
+            if label in REGULATORY_MAP and confidence > 0.30:
                 rule = REGULATORY_MAP[label]
                 
                 # Deduct from the overall trust score
                 self.trust_score -= rule["penalty"]
                 
                 # 2. Record the visual finding (for drawing boxes on the frontend)
-                self.findings.append({
+                finding = {
                     "type": "Dark Pattern Detected",
                     "category": rule["category"],
                     "pattern": rule["pattern_name"],
                     "confidence": round(confidence * 100, 2),
                     "coordinates": {
-                        "y_min": bbox[0],
-                        "x_min": bbox[1],
-                        "y_max": bbox[2],
-                        "x_max": bbox[3]
+                        "y_min": bbox[0] if bbox else 0,
+                        "x_min": bbox[1] if bbox else 0,
+                        "y_max": bbox[2] if bbox else 0,
+                        "x_max": bbox[3] if bbox else 0
                     },
                     "explanation": rule["description"]
-                })
+                }
+
+                # Include detected text if available
+                if detection.get("detected_text"):
+                    finding["detected_text"] = detection["detected_text"]
+                if detection.get("pattern_category"):
+                    finding["pattern_category"] = detection["pattern_category"]
+
+                self.findings.append(finding)
 
                 #  Add to the legal breakdown if that specific article hasn't been flagged yet
                 if not any(b["article"] == rule["regulation"] for b in self.regulatory_breakdown):
