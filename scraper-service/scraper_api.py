@@ -22,6 +22,7 @@ def get_chrome_options():
     options.add_argument("--disable-dev-shm-usage") 
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
+    options.add_argument("--hide-scrollbars") # Added to prevent UI interference in OCR
     return options
 
 @app.post("/api/capture")
@@ -34,6 +35,7 @@ async def capture_screenshot(request: ScrapeRequest):
         options = get_chrome_options()
         driver = webdriver.Chrome(options=options)
         driver.get(request.target_url)
+        
         # We enforce a 4-second wait to ensure dynamic cookie banners and popups load 
         # as these often contain critical GDPR consent mechanisms.
         time.sleep(4) 
@@ -62,11 +64,15 @@ async def capture_screenshot(request: ScrapeRequest):
             
         print(f"[+] Successfully captured and saved to {file_path}")
         
-        # Return the path so Node.js knows where to find the image
+        # Added dimensions so Node.js and React can process the 0-1000 normalized boxes
         return {
             "status": "success", 
             "file_path": file_path, 
-            "url": request.target_url
+            "url": request.target_url,
+            "dimensions": {
+                "width": width,
+                "height": height
+            }
         }
 
     except Exception as e:
@@ -74,4 +80,4 @@ async def capture_screenshot(request: ScrapeRequest):
         raise HTTPException(status_code=500, detail="Failed to capture website.")
     finally:
         if driver:
-            driver.quit() 
+            driver.quit()
