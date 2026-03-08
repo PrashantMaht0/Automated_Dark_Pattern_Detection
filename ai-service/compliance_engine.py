@@ -70,9 +70,18 @@ REGULATORY_MAP = {
         "severity": "High",
         "penalty": 20,
         "remedy": "Use clear, plain language without double negatives or deceptive phrasing."
+    },
+
+    "deceptive_element": {
+        "category": "General Dark Pattern",
+        "pattern_name": "Deceptive UI Element",
+        "regulation": "GDPR Art. 5(1)(a) (Transparency & Fairness)",
+        "description": "An interactive element visually or textually designed to mislead the user or obscure data protection controls.",
+        "severity": "High",
+        "penalty": 20,
+        "remedy": "Ensure clear, transparent, and non-deceptive design with equal visual weight for opt-out options."
     }
 }
-
 class ComplianceAuditor:
     def __init__(self, target_url):
         self.target_url = target_url
@@ -80,39 +89,43 @@ class ComplianceAuditor:
         self.findings = []
         self.regulatory_breakdown = []
 
-    def analyze_detections(self, ai_predictions):
+    def analyze_detections(self, hf_api_response):
         """
-        Takes raw LayoutLM predictions and converts them into a legal audit.
-        Expected input format: [{'label': 'preselected_invasive_default', 'box_2d': [ymin, xmin, ymax, xmax], 'confidence': 0.88}, ...]
+        Takes the raw JSON response from the Hugging Face LayoutLM API.
+        Expected input: The full JSON dictionary returned by the HF Space.
         """
-        for detection in ai_predictions:
-            label = detection.get("label")
-            confidence = detection.get("confidence", 1.0)
-            bbox = detection.get("box_2d")
+        # 1. Extract the array from the API response payload
+        ai_predictions = hf_api_response.get("flagged_elements", [])
 
-            # Only process if we have a legal mapping and the AI is reasonably confident
-            if label in REGULATORY_MAP and confidence > 0.65:
+        for detection in ai_predictions:
+            # 2. Update keys to match our deployed app.py
+            label = detection.get("predicted_label") 
+            bbox = detection.get("box_2d")
+            element_text = detection.get("text") 
+
+            # 3. Process if it maps to a regulatory penalty (ignoring safe 'action_button's)
+            if label in REGULATORY_MAP:
                 rule = REGULATORY_MAP[label]
                 
                 # Deduct from the overall trust score
                 self.trust_score -= rule["penalty"]
                 
-                # 2. Record the visual finding (for drawing boxes on the frontend)
+                # Record the visual finding
                 self.findings.append({
                     "type": "Dark Pattern Detected",
+                    "element_text": element_text, # Added this so the frontend can display the text!
                     "category": rule["category"],
                     "pattern": rule["pattern_name"],
-                    "confidence": round(confidence * 100, 2),
                     "coordinates": {
-                        "y_min": bbox[0],
-                        "x_min": bbox[1],
-                        "y_max": bbox[2],
-                        "x_max": bbox[3]
+                        "x_min": bbox[0], # Mapped to LayoutLM [xmin, ymin, xmax, ymax]
+                        "y_min": bbox[1],
+                        "x_max": bbox[2],
+                        "y_max": bbox[3]
                     },
                     "explanation": rule["description"]
                 })
 
-                #  Add to the legal breakdown if that specific article hasn't been flagged yet
+                # Add to the legal breakdown if that specific article hasn't been flagged yet
                 if not any(b["article"] == rule["regulation"] for b in self.regulatory_breakdown):
                     self.regulatory_breakdown.append({
                         "article": rule["regulation"],
@@ -123,6 +136,7 @@ class ComplianceAuditor:
 
         # Ensure trust score doesn't drop below 0
         self.trust_score = max(self.trust_score, 0)
+        print(self._generate_final_report()) # DEBUG: Print the final report before returning
         return self._generate_final_report()
 
     def _generate_final_report(self):

@@ -1,61 +1,57 @@
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
-from fastapi.responses import JSONResponse
-from PIL import Image
-import io
-# NOTE: Uncomment these when your model weights are ready to load
-# from transformers import LayoutLMv3Processor, LayoutLMv3ForTokenClassification
-# import torch
-
-# Import the engine we just created
+import requests
+import os
+from dotenv import load_dotenv
 from compliance_engine import ComplianceAuditor
+import json
 
-app = FastAPI(title="LayoutLM Dark Pattern Inference API")
+# Load your Hugging Face token from the .env file in ai-service/
+load_dotenv()
 
-# ============================================================================
-# MODEL LOADING (Placeholder for your trained weights)
-# ============================================================================
-# processor = LayoutLMv3Processor.from_pretrained("microsoft/layoutlmv3-base", apply_ocr=True)
-# model = LayoutLMv3ForTokenClassification.from_pretrained("./model_weights")
+app = FastAPI(title="Compliance AI Wrapper")
 
-@app.get("/")
-def health_check():
-    return {"status": "AI Inference Service is running."}
+HF_TOKEN = os.getenv("HF_TOKEN")
+HF_API_URL = "https://prashant-mahto-dark-pattern-layoutlm.hf.space/analyze"
 
-@app.post("/analyze")
-async def analyze_website(
+@app.post("/audit")
+async def run_audit(
     target_url: str = Form(...),
-    screenshot: UploadFile = File(...)
+    screenshot: UploadFile = File(...),
+    words: str = Form(...),
+    boxes: str = Form(...)
 ):
-    print(f"[*] Received audit request for: {target_url}")
-    
     try:
-        # 1. Read the image sent by Node.js
+        # 1. Package the incoming data to forward to Hugging Face
+        headers = {"Authorization": f"Bearer {HF_TOKEN}"}
         image_bytes = await screenshot.read()
-        image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-        
-        # ====================================================================
-        # 2. INFERENCE BLOCK (Replace this mock data with real inference later)
-        # ====================================================================
-        # encoding = processor(image, return_tensors="pt")
-        # with torch.no_grad():
-        #     outputs = model(**encoding)
-        # 
-        # [Your logic here to convert tensor outputs to bounding boxes and labels]
-        
-        # MOCK PREDICTIONS (For testing the pipeline before model is fully trained)
-        mock_predictions = [
-            {"label": "preselected_invasive_default", "box_2d": [400, 200, 420, 220], "confidence": 0.94},
-            {"label": "hidden_in_plain_sight", "box_2d": [800, 150, 815, 300], "confidence": 0.88}
-        ]
-        # ====================================================================
-        
-        # 3. Pass AI results to the Compliance Engine
+        files = {"screenshot": (screenshot.filename, image_bytes, screenshot.content_type)}
+        data = {"words": words, "boxes": boxes}
+
+        print(f"[*] Analyzing {target_url} via Hugging Face Cloud...")
+        hf_response = requests.post(HF_API_URL, headers=headers, files=files, data=data)
+
+        if hf_response.status_code != 200:
+            raise Exception(f"Hugging Face API Error: {hf_response.text}")
+
+        ai_predictions = hf_response.json()
+
+        # ==========================================
+        #  DEBUG: PRINT EXACT HUGGING FACE OUTPUT 
+        # ==========================================
+        print("\n" + "="*50)
+        print(" RAW HUGGING FACE OUTPUT:")
+        print("="*50)
+        print(json.dumps(ai_predictions, indent=2))
+        print("="*50 + "\n")
+        # ==========================================
+
+        # 2. Pass the AI predictions into your Compliance Engine
+        print("[*] Generating Legal Compliance Report...")
         auditor = ComplianceAuditor(target_url=target_url)
-        final_report = auditor.analyze_detections(mock_predictions)
-        
-        # 4. Return the structured legal report to Node.js
-        return JSONResponse(content=final_report)
+        final_report = auditor.analyze_detections(ai_predictions)
+
+        # 3. Return the formatted JSON to your Node.js backend
+        return final_report
 
     except Exception as e:
-        print(f"[-] Inference Error: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error during AI inference and compliance mapping.")
+        raise HTTPException(status_code=500, detail=str(e))
