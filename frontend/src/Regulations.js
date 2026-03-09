@@ -16,7 +16,7 @@ export default function Regulations() {
         <div className="text-center mb-16">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">GDPR & DSA Regulations</h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Soon....
+            Coming soon....
           </p>
         </div>
 
