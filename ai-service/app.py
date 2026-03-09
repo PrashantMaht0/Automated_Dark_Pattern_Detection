@@ -35,15 +35,6 @@ async def run_audit(
 
         ai_predictions = hf_response.json()
 
-        # ==========================================
-        #  DEBUG: PRINT EXACT HUGGING FACE OUTPUT 
-        # ==========================================
-        print("\n" + "="*50)
-        print(" RAW HUGGING FACE OUTPUT:")
-        print("="*50)
-        print(json.dumps(ai_predictions, indent=2))
-        print("="*50 + "\n")
-        # ==========================================
 
         # 2. Pass the AI predictions into your Compliance Engine
         print("[*] Generating Legal Compliance Report...")

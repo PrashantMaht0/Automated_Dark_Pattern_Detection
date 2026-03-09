@@ -5,19 +5,19 @@ const teamMembers = [
     name: 'Nitish',
     initials: 'N',
     role: '',
-    bio: 'Specializes in transformer models and regulatory compliance systems. Led the architecture design and model training pipeline.',
+    bio: '',
   },
   {
     name: 'Gunna',
     initials: 'G',
     role: '',
-    bio: 'Expert in Python web scraping and API development. Built the Flask backend and integration with ML inference engines.',
+    bio: '',
   },
   {
     name: 'Prashant',
     initials: 'P',
     role: '',
-    bio: 'Focused on user experience and data visualization. Designed the reporting interface and export functionality.',
+    bio: '',
   },
 ];
 
@@ -57,40 +57,7 @@ export default function About() {
         <div className="bg-gray-50 rounded-2xl p-8 mb-16">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Project Contributions</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              {[
-                { title: 'Research & Dataset Curation', desc: 'Compiled comprehensive dataset of 5,000+ labeled dark pattern examples across 12 categories.' },
-                { title: 'Model Development', desc: 'Fine-tuned transformer models achieving 94.3% accuracy on dark pattern classification.' },
-                { title: 'Regulatory Mapping', desc: 'Mapped detection categories to specific GDPR articles and DSA obligations.' },
-              ].map((item, i) => (
-                <div key={i} className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i className="fas fa-check text-green-600"></i>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900">{item.title}</h4>
-                    <p className="text-sm text-gray-600">{item.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="space-y-4">
-              {[
-                { title: 'Web Application', desc: 'Built responsive React frontend with Tailwind CSS and real-time analysis capabilities.' },
-                { title: 'API Development', desc: 'Python FastAPI backend with web scraping and dual-model ML inference endpoints.' },
-                { title: 'Report Generation', desc: 'PDF/PNG export functionality with professional compliance formatting.' },
-              ].map((item, i) => (
-                <div key={i} className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i className="fas fa-check text-green-600"></i>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900">{item.title}</h4>
-                    <p className="text-sm text-gray-600">{item.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            Soon to be added with project contributions and acknowledgments.
           </div>
         </div>
 
@@ -102,7 +69,7 @@ export default function About() {
             This project is open source and available on GitHub. We welcome contributions, bug reports, and feature requests from the community.
           </p>
           <a
-            href="https://github.com"
+            href="https://github.com/PrashantMaht0/Automated_Dark_Pattern_Detection"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center px-6 py-3 bg-white text-gray-900 font-semibold rounded-xl hover:bg-gray-100 transition-colors"

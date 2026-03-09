@@ -136,17 +136,13 @@ export default function Home() {
         trustScore: summary.trust_score || 100,
         status: summary.status || 'Compliant',
         results: detections.map(d => ({
-            type: d.pattern || d.category,
-            evidence: d.element_text || 'Visual UI Element',
-            probability: 88, 
-            gdpr: 'GDPR Art. 5(1)(a) - Transparency & Fairness', // Fallback for the broad Deceptive Element class
-            dsa: 'DSA Art. 27 - No Dark Patterns',
-            recommendation: d.explanation || 'Review and remediate the detected pattern to ensure compliance.',
-            coordinates: d.coordinates, // <--- CRUCIAL: We are passing the bounding boxes to the Report page!
-            gate_probability: null,
-            router_confidence: null,
-            fusion_score: null,
-          })),
+          type: d.pattern || d.category,
+          evidence: d.element_text || 'Visual UI Element',
+          explanation: d.explanation, // This now holds the AI's legal reasoning
+          gdpr: d.regulation,
+          recommendation: d.recommendation,
+          coordinates: d.coordinates,
+        })),
         regulatory_breakdown: backendData.regulatory_breakdown || [],
         analysis_stats: backendData.analysis_stats || {},
       };

@@ -32,7 +32,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-gray-200 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-gray-500 text-sm">&copy; 2024 Dark Pattern Detector. All rights reserved.</p>
+          <p className="text-gray-500 text-sm">&copy; 2026 Dark Pattern Detector. All rights reserved.</p>
           <div className="flex space-x-6 mt-4 md:mt-0">
             <a href="https://github.com/PrashantMaht0/Automated_Dark_Pattern_Detection" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-600 transition-colors"><i className="fab fa-github text-xl"></i></a>
           </div>

@@ -32,15 +32,37 @@ export default function Report() {
 
   // --- PDF & Export Functions Kept Exactly the Same ---
   const downloadPDF = () => {
-    const content = reportRef.current;
-    if (!content) return;
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`<html><head><title>Dark Pattern Compliance Report</title><style>body{padding:40px;font-family:sans-serif;}table{width:100%;border-collapse:collapse;margin:16px 0;}th,td{border:1px solid #ddd;padding:12px;text-align:left;}</style></head><body><h1>Report for ${reportData.url}</h1><script>window.print();</script></body></html>`);
-    printWindow.document.close();
+    // This tells the browser to print the exact dashboard you are currently looking at!
+    window.print();
   };
 
-  const downloadPNG = async () => { /* Kept same */ };
-  const downloadJSON = () => { /* Kept same */ };
+  const downloadPNG = async () => { 
+    const el = reportRef.current;
+    if (!el) return;
+
+    try {
+      // Dynamically import html2canvas so it doesn't slow down initial page load
+      const html2canvas = (await import('html2canvas')).default;
+      const canvas = await html2canvas(el, { scale: 2, useCORS: true });
+      const link = document.createElement('a');
+      link.download = `dark_pattern_report_${Date.now()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (err) {
+      console.error("Failed to export PNG:", err);
+      alert('PNG export failed. Please ensure html2canvas is installed in your frontend folder.');
+    }
+  };
+  const downloadJSON = () => {
+    const json = JSON.stringify(reportData.raw || reportData, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `dark_pattern_report_${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   if (!reportData) return null;
 
@@ -49,7 +71,31 @@ export default function Report() {
   const screenshotSrc = reportData.raw?.raw?.screenshot_url || reportData.raw?.screenshot_url || reportData.raw?.imagePath || "https://via.placeholder.com/800x600?text=Screenshot+Not+Available";
 
   return (
+    
     <div className="bg-gray-50 min-h-screen py-8">
+      <style>
+        {`
+          @media print {
+            /* 1. Hide the Navbar and Footer globally */
+            nav, footer, header, .navbar, .footer { 
+              display: none !important; 
+            }
+            /* 2. Force the browser to print your beautiful background colors! */
+            * { 
+              -webkit-print-color-adjust: exact !important; 
+              print-color-adjust: exact !important; 
+            }
+            /* 3. Remove default browser margins */
+            @page { margin: 10mm; }
+            /* 4. Remove the gray background from the main container */
+            body, .bg-gray-50 { background-color: white !important; }
+            /* 5. Hide the back button and wrapper padding */
+            .print\\:hidden { display: none !important; }
+            .print\\:block { display: block !important; }
+            .print\\:flex { display: flex !important; }
+          }
+        `}
+      </style>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Back Button */}
         <button
@@ -64,6 +110,12 @@ export default function Report() {
 
         {/* Report Content */}
         <div ref={reportRef} className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 mb-6" id="report-content">
+          <div className="hidden print:flex items-center gap-2 mb-8 border-b border-gray-200 pb-4">
+            <i className="fas fa-shield-alt text-gray-400 text-3xl"></i>
+            <span className="text-3xl font-extrabold text-gray-900 tracking-tight">
+              Dark Pattern<span className="text-blue-600">Detector</span>
+            </span>
+          </div>
           {/* Header */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
             <div>
@@ -78,8 +130,17 @@ export default function Report() {
               </div>
             </div>
             {/* Export Buttons... */}
-            <div className="mt-4 md:mt-0 flex gap-3">
-              <button onClick={downloadPDF} className="px-4 py-2 bg-red-50 text-red-700 rounded-lg font-medium hover:bg-red-100 transition-colors flex items-center gap-2"><i className="fas fa-file-pdf"></i> Download PDF</button>
+            <div className="mt-4 md:mt-0 flex gap-3 print:hidden">
+              <button onClick={downloadPDF} className="px-4 py-2 bg-red-50 text-red-700 rounded-lg font-medium hover:bg-red-100 transition-colors flex items-center gap-2">
+                <i className="fas fa-file-pdf"></i> Download PDF
+              </button>
+              <button onClick={downloadPNG} className="px-4 py-2 bg-green-50 text-green-700 rounded-lg font-medium hover:bg-green-100 transition-colors flex items-center gap-2">
+                <i className="fas fa-image"></i> Download PNG
+              </button>
+              <button onClick={downloadJSON} className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg font-medium hover:bg-blue-100 transition-colors flex items-center gap-2">
+                <i className="fas fa-code"></i> Download JSON
+              </button>
+
             </div>
           </div>
 
@@ -153,13 +214,15 @@ export default function Report() {
           {/* --- END VISUAL AUDIT SECTION --- */}
 
           {/* Results Table */}
+          {reportData.results.length > 0 && (
           <div className="overflow-hidden rounded-xl border border-gray-200">
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Pattern Type</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Evidence Snippet</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Probability</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Explanation</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">GDPR Violations</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Recommendation</th>
                 </tr>
               </thead>
@@ -179,8 +242,13 @@ export default function Report() {
                     <td className="px-6 py-4 text-sm text-gray-900 max-w-xs">
                       <span className="font-mono bg-gray-100 px-1 rounded">"{result.evidence}"</span>
                     </td>
+                    <td className="px-6 py-4 text-sm text-gray-600 max-w-xs">
+                      {result.explanation}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm font-bold text-gray-600">{result.probability}%</span>
+                      <span className="px-2 py-1 bg-red-50 text-red-700 rounded text-xs font-bold border border-red-100">
+                        {result.gdpr}
+                      </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600 max-w-xs">
                       {result.recommendation}
@@ -190,7 +258,18 @@ export default function Report() {
               </tbody>
             </table>
           </div>
-
+          )}
+          {/* Empty State */}
+          {reportData.results.length === 0 && (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i className="fas fa-check-circle text-3xl text-green-600"></i>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No Dark Patterns Detected</h3>
+              <p className="text-gray-600">Great news! Our analysis didn't find any deceptive design patterns on this page.</p>
+            </div>
+          )}
+        
         </div>
       </div>
     </div>
