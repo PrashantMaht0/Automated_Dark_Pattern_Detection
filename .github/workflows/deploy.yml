@@ -19,7 +19,6 @@ jobs:
           key: ${{ secrets.AZURE_SSH_KEY }}
           # These are the exact commands GitHub will run on your Azure terminal
           script: |
-            # Navigate to your project folder (CHANGE THIS TO YOUR ACTUAL FOLDER NAME)
             cd /home/azureuser/Automated_Dark_Pattern_Detection
             
             # Pull the latest code from GitHub
