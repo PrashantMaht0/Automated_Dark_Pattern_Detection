@@ -22,11 +22,22 @@ exports.generateAudit = async (req, res) => {
     try {
         // --- 1. CAPTURE ---
         console.log(`[*] Requesting screenshot from Scraper Service...`);
-        const scraperResponse = await axios.post(SCRAPER_API_URL, { target_url: targetUrl });
-        const screenshotPath = scraperResponse.data.file_path;
 
-        if (!fs.existsSync(screenshotPath)) {
-            throw new Error(`Screenshot not found at ${screenshotPath}`);
+        try {
+            const scraperResponse = await axios.post(SCRAPER_API_URL, { target_url: targetUrl });
+            
+            // Safety check: Did the scraper actually return a path?
+            if (!scraperResponse.data || !scraperResponse.data.file_path) {
+                throw new Error("Scraper returned success but no file path was found.");
+            }
+            
+            const screenshotPath = scraperResponse.data.file_path;
+            console.log(`[+] Screenshot successfully saved at: ${screenshotPath}`);
+
+        } catch (error) {
+            console.error(`[-] Audit Pipeline Failed at Capture stage: ${error.message}`);
+            // Respond to the frontend so it can display the error instead of spinning forever
+            return res.status(502).json({ error: "Failed to capture website screenshot." });
         }
 
         // --- 2. GEMINI EXTRACTION ---
