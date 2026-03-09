@@ -20,7 +20,7 @@ jobs:
           # These are the exact commands GitHub will run on your Azure terminal
           script: |
             # Navigate to your project folder (CHANGE THIS TO YOUR ACTUAL FOLDER NAME)
-            cd /home/azureuser/YOUR_REPOSITORY_NAME
+            cd /home/azureuser/Automated_Dark_Pattern_Detection
             
             # Pull the latest code from GitHub
             git pull origin main
