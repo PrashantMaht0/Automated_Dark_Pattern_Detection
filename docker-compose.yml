@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # 1. The React Website (Accessible publicly on port 80)
   frontend:
@@ -15,10 +13,11 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      - ./exports:/app/exports
+      - ./exports:/exports 
     environment:
       - SCRAPER_API_URL=http://scraper-service:8000/api/capture
       - AI_SERVICE_URL=http://ai-service:8001/audit
+      - PORT=5000
     depends_on:
       - scraper-service
       - ai-service
@@ -29,7 +28,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./exports:/app/exports
+      - ./exports:/exports # Consistent internal path
     environment:
       - DISPLAY=:99
 
@@ -39,6 +38,6 @@ services:
     ports:
       - "8001:8001"
     volumes:
-      - ./exports:/app/exports
+      - ./exports:/exports # Consistent internal path
     env_file:
       - ./ai-service/.env

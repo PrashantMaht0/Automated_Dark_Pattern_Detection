@@ -93,7 +93,7 @@ exports.generateAudit = async (req, res) => {
 
         // --- 4. HOST IMAGE FOR REACT ---
         // Ensure paths point to the shared Docker volume mount
-        const exportsDir = '/app/exports'; 
+        const exportsDir = '/exports'; 
         screenshotFilename = path.basename(screenshotPath);
         publicImagePath = path.join(exportsDir, screenshotFilename);
         
