@@ -16,12 +16,13 @@ services:
       - "5000:5000"
     volumes:
       - ./exports:/app/exports
-    env_file:
-      - ./backend/.env
+    environment:
+      - SCRAPER_API_URL=http://scraper-service:8000/api/capture
+      - AI_SERVICE_URL=http://ai-service:8001/audit
     depends_on:
       - scraper-service
       - ai-service
-
+      
   # 3. The Selenium Scraper
   scraper-service:
     build: ./scraper-service
