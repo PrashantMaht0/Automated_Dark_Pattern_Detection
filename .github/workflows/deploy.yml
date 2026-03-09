@@ -1,31 +1,24 @@
-name: Deploy to Azure VM Production
+name: Deploy to Azure VM
 
-# Run this script ONLY when you push to the 'main' branch
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Execute Deployment Commands via SSH
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Executing remote ssh commands using password
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.AZURE_HOST }}
           username: ${{ secrets.AZURE_USERNAME }}
           key: ${{ secrets.AZURE_SSH_KEY }}
-          # These are the exact commands GitHub will run on your Azure terminal
           script: |
-            cd /home/azureuser/Automated_Dark_Pattern_Detection
-            
-            # Pull the latest code from GitHub
-            git pull origin main
-            
-            # Rebuild and restart the Docker containers in the background
-            sudo docker compose up -d --build
-            
-            # Clean up old Docker images to save disk space
-            sudo docker image prune -f
+            cd ~/Automated_Dark_Pattern_Detection
+            git fetch origin main
+            git reset --hard origin/main
+            docker compose up -d --build
