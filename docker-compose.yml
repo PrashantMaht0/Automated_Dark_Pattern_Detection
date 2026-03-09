@@ -24,7 +24,7 @@ services:
 
   # 3. The Selenium Scraper
   scraper-service:
-    build: ./scraper
+    build: ./scraper-service
     ports:
       - "8000:8000"
     volumes:
