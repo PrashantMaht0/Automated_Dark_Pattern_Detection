@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://20.199.40.35:5000/api';
+const API_URL = process.env.REACT_APP_API_URL || '/api';
 
 const LOADING_STEPS = [
   'Connecting to website...',
