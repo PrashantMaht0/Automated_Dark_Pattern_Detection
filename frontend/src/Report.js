@@ -66,10 +66,20 @@ export default function Report() {
 
   if (!reportData) return null;
 
-  // Attempt to get the image from the raw backend data. (Adjust 'screenshot_url' to match your scraper's actual output key)
-  // Look at the added `.raw?.raw` !
-  const screenshotSrc = reportData.raw?.raw?.screenshot_url || reportData.raw?.screenshot_url || reportData.raw?.imagePath || "https://via.placeholder.com/800x600?text=Screenshot+Not+Available";
+  // 1. Get whatever path the backend sent (could be a full IP URL, or just a filename)
+  const rawScreenshotPath = reportData.raw?.raw?.screenshot_url || reportData.raw?.screenshot_url || reportData.raw?.imagePath;
 
+  // 2. Set the default placeholder
+  let screenshotSrc = "https://via.placeholder.com/800x600?text=Screenshot+Not+Available";
+
+  // 3. If the backend gave us an image, strip out the old IP and force the secure path
+  if (rawScreenshotPath) {
+    // .split('/').pop() grabs ONLY the very last part of the string (the actual filename)
+    const filename = rawScreenshotPath.split('/').pop(); 
+    
+    // Now we safely route it through your Nginx secure reverse proxy
+    screenshotSrc = `/exports/${filename}`;
+  }
   return (
     
     <div className="bg-gray-50 min-h-screen py-8">
