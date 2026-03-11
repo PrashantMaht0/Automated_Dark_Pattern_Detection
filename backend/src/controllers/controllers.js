@@ -69,10 +69,21 @@ exports.generateAudit = async (req, res) => {
             Normalize coordinates to 0-1000.
             DO NOT include markdown fences.`;
 
-        const result = await model.generateContent([prompt, imageData]);
-        let responseText = result.response.text();
-        responseText = responseText.replace(/```json|```/gi, '').trim();
-        const geminiData = JSON.parse(responseText);
+        const result = await model.generateContent([prompt, imageData]);const responseText = result.response.text();
+
+        // 1. Strip out the ```json and ``` markdown formatting
+        let cleanedText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+        // 2. Just in case Gemini added chatty text before the JSON, find the first { and last }
+        const firstBrace = cleanedText.indexOf('{');
+        const lastBrace = cleanedText.lastIndexOf('}');
+
+        if (firstBrace !== -1 && lastBrace !== -1) {
+            cleanedText = cleanedText.substring(firstBrace, lastBrace + 1);
+        }
+
+        // 3. Now it is safe to parse!
+        const geminiData = JSON.parse(cleanedText);
 
         // --- 3. FORMAT FOR LAYOUTLM ---
         console.log(`[*] Formatting OCR data for LayoutLM API...`);
