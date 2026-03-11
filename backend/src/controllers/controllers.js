@@ -42,10 +42,12 @@ exports.generateAudit = async (req, res) => {
             console.error(`[-] Capture stage failed: ${error.message}`);
             return res.status(502).json({ error: "Failed to capture website screenshot." });
         }
-
         // --- 2. GEMINI EXTRACTION ---
         console.log(`[*] Sending image to Gemini 2.5 Flash for OCR...`);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const model = genAI.getGenerativeModel({ 
+            model: "gemini-2.5-flash",
+            generationConfig: { responseMimeType: "application/json" } // <-- Add this!
+        });
         
         const imageData = {
             inlineData: {
@@ -69,20 +71,24 @@ exports.generateAudit = async (req, res) => {
             Normalize coordinates to 0-1000.
             DO NOT include markdown fences.`;
 
-        const result = await model.generateContent([prompt, imageData]);const responseText = result.response.text();
+        const result = await model.generateContent([prompt, imageData]);
 
+        const responseText = result.response.text();
         // 1. Strip out the ```json and ``` markdown formatting
         let cleanedText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 
-        // 2. Just in case Gemini added chatty text before the JSON, find the first { and last }
-        const firstBrace = cleanedText.indexOf('{');
-        const lastBrace = cleanedText.lastIndexOf('}');
+        // 2. Look for square brackets [ ] since the prompt asks for an array
+        const firstBracket = cleanedText.indexOf('[');
+        const lastBracket = cleanedText.lastIndexOf(']');
 
-        if (firstBrace !== -1 && lastBrace !== -1) {
-            cleanedText = cleanedText.substring(firstBrace, lastBrace + 1);
+        if (firstBracket !== -1 && lastBracket !== -1) {
+            cleanedText = cleanedText.substring(firstBracket, lastBracket + 1);
         }
 
-        // 3. Now it is safe to parse!
+        // 3. Strip trailing commas before closing brackets or braces
+        cleanedText = cleanedText.replace(/,\s*([}\]])/g, '$1');
+
+        // 4. Safely parse!
         const geminiData = JSON.parse(cleanedText);
 
         // --- 3. FORMAT FOR LAYOUTLM ---
