@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const FormData = require('form-data');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const crypto = require('crypto'); 
 
 // Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -11,42 +12,56 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const SCRAPER_API_URL = process.env.SCRAPER_API_URL || 'http://scraper-service:8000/api/capture';
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://ai-service:8001/audit';
 
-exports.generateAudit = async (req, res) => {
+// This Map will act as our temporary database to hold job statuses
+const activeJobs = new Map();
+
+// --- ENDPOINT 1: Start the Audit and Reply Instantly ---
+exports.startAudit = async (req, res) => {
     const { targetUrl } = req.body;
 
     if (!targetUrl) {
         return res.status(400).json({ error: "Please provide a targetUrl." });
     }
 
-    // --- SCOPE FIX: Declare variables at the top of the function ---
+    // 1. Generate a unique Ticket Number (Job ID)
+    const jobId = crypto.randomUUID();
+
+    // 2. Save the initial job status to our "database"
+    activeJobs.set(jobId, { status: 'processing', report: null, error: null });
+
+    // 3. IMMEDIATELY send the 202 Accepted response back to the phone/browser
+    res.status(202).json({ jobId, status: 'processing', message: 'Audit started in the background.' });
+
+    // 4. Kick off the heavy AI pipeline (Notice there is NO 'await' here!)
+    runBackgroundAudit(jobId, targetUrl, req.hostname, process.env.PORT || 5000);
+};
+
+
+// --- BACKGROUND WORKER: The Heavy Lifting ---
+async function runBackgroundAudit(jobId, targetUrl, hostname, port) {
     let screenshotPath = null;
     let screenshotFilename = null;
     let publicImagePath = null;
 
-    console.log(`\n[*] Starting Full Pipeline Audit for: ${targetUrl}`);
+    console.log(`\n[*] Starting Background Pipeline Audit for Job [${jobId}]: ${targetUrl}`);
 
     try {
         // --- 1. CAPTURE ---
-        console.log(`[*] Requesting screenshot from Scraper Service...`);
-        try {
-            const scraperResponse = await axios.post(SCRAPER_API_URL, { target_url: targetUrl });
-            
-            if (!scraperResponse.data || !scraperResponse.data.file_path) {
-                throw new Error("Scraper returned success but no file path was found.");
-            }
-            
-            // Assign to the 'lifted' variables
-            screenshotPath = scraperResponse.data.file_path;
-            console.log(`[+] Screenshot successfully saved at: ${screenshotPath}`);
-        } catch (error) {
-            console.error(`[-] Capture stage failed: ${error.message}`);
-            return res.status(502).json({ error: "Failed to capture website screenshot." });
+        console.log(`[*] [Job ${jobId}] Requesting screenshot from Scraper Service...`);
+        const scraperResponse = await axios.post(SCRAPER_API_URL, { target_url: targetUrl });
+        
+        if (!scraperResponse.data || !scraperResponse.data.file_path) {
+            throw new Error("Scraper returned success but no file path was found.");
         }
+        
+        screenshotPath = scraperResponse.data.file_path;
+        console.log(`[+] [Job ${jobId}] Screenshot successfully saved at: ${screenshotPath}`);
+
         // --- 2. GEMINI EXTRACTION ---
-        console.log(`[*] Sending image to Gemini 2.5 Flash for OCR...`);
+        console.log(`[*] [Job ${jobId}] Sending image to Gemini 2.5 Flash for OCR...`);
         const model = genAI.getGenerativeModel({ 
             model: "gemini-2.5-flash",
-            generationConfig: { responseMimeType: "application/json" } // <-- Add this!
+            generationConfig: { responseMimeType: "application/json" }
         });
         
         const imageData = {
@@ -72,8 +87,8 @@ exports.generateAudit = async (req, res) => {
             DO NOT include markdown fences.`;
 
         const result = await model.generateContent([prompt, imageData]);
-
         const responseText = result.response.text();
+
         // 1. Strip out the ```json and ``` markdown formatting
         let cleanedText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 
@@ -92,14 +107,13 @@ exports.generateAudit = async (req, res) => {
         const geminiData = JSON.parse(cleanedText);
 
         // --- 3. FORMAT FOR LAYOUTLM ---
-        console.log(`[*] Formatting OCR data for LayoutLM API...`);
+        console.log(`[*] [Job ${jobId}] Formatting OCR data for LayoutLM API...`);
         const words = [];
         const boxes = [];
         const clamp = (val) => Math.min(1000, Math.max(0, Math.round(val)));
 
         geminiData.forEach(item => {
             words.push(item.text);
-            // Gemini [ymin, xmin, ymax, xmax] -> LayoutLM [xmin, ymin, xmax, ymax]
             boxes.push([
                 clamp(item.box_2d[1]), 
                 clamp(item.box_2d[0]), 
@@ -109,21 +123,18 @@ exports.generateAudit = async (req, res) => {
         });
 
         // --- 4. HOST IMAGE FOR REACT ---
-        // Ensure paths point to the shared Docker volume mount
         const exportsDir = '/exports'; 
         screenshotFilename = path.basename(screenshotPath);
         publicImagePath = path.join(exportsDir, screenshotFilename);
         
-        // Only copy if the paths are actually different
         if (screenshotPath !== publicImagePath && fs.existsSync(screenshotPath)) {
             fs.copyFileSync(screenshotPath, publicImagePath);
         }
         
-        // Use the Public IP of your Azure VM here if 'localhost' fails in the browser
-        const publicScreenshotUrl = `http://${req.hostname}:${process.env.PORT || 5000}/exports/${screenshotFilename}`;
+        const publicScreenshotUrl = `http://${hostname}:${port}/exports/${screenshotFilename}`;
 
         // --- 5. CALL THE PYTHON AI SERVICE ---
-        console.log(`[*] Forwarding to Python AI Compliance Service...`);
+        console.log(`[*] [Job ${jobId}] Forwarding to Python AI Compliance Service...`);
         const form = new FormData();
         form.append('target_url', targetUrl);
         form.append('screenshot', fs.createReadStream(publicImagePath));
@@ -134,16 +145,33 @@ exports.generateAudit = async (req, res) => {
             headers: { ...form.getHeaders() }
         });
 
-        // --- 6. RETURN FINAL REPORT TO REACT ---
+        // --- 6. SAVE FINAL REPORT TO MEMORY INSTEAD OF SENDING TO RES ---
         const finalReport = aiResponse.data;
         if (!finalReport.raw) finalReport.raw = {};
         finalReport.raw.screenshot_url = publicScreenshotUrl;
 
-        console.log(`[*] Pipeline Complete! Sending compliance report to React.`);
-        res.status(200).json(finalReport);
+        console.log(`[*] [Job ${jobId}] Pipeline Complete! Report saved to memory.`);
+        
+        // Update the job status to completed!
+        activeJobs.set(jobId, { status: 'completed', report: finalReport, error: null });
 
     } catch (error) {
-        console.error("[-] Audit Pipeline Failed:", error.message);
-        res.status(500).json({ error: error.message || "Internal Server Error" });
+        console.error(`[-] [Job ${jobId}] Background Audit Failed:`, error.message);
+        // Save the error so the frontend knows to stop polling
+        activeJobs.set(jobId, { status: 'failed', report: null, error: error.message || "Internal Server Error" });
     }
+}
+
+
+// --- ENDPOINT 2: The Polling Route for React to check status ---
+exports.checkAuditStatus = (req, res) => {
+    const { jobId } = req.params;
+    const job = activeJobs.get(jobId);
+
+    if (!job) {
+        return res.status(404).json({ error: "Job ID not found or expired." });
+    }
+
+    // Returns { status: 'processing' | 'completed' | 'failed', report: {...}, error: '...' }
+    res.status(200).json(job); 
 };

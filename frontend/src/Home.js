@@ -90,6 +90,8 @@ export default function Home() {
     apiDoneRef.current = false;
     reportDataRef.current = null;
 
+    // --- PROGRESS BAR UX TIMERS ---
+    // Change steps slower to account for the ~3 minute wait time
     const maxAutoStep = LOADING_STEPS.length - 2; 
     let stepCount = 0;
     stepInterval.current = setInterval(() => {
@@ -98,67 +100,112 @@ export default function Home() {
       if (stepCount <= maxAutoStep) {
         setCurrentStep(stepCount);
       }
-    }, 3000);
+    }, 15000); // Advance a text step every 15 seconds
 
+    // Smoothly approach 95% over the course of ~3 minutes
     let prog = 0;
     progressInterval.current = setInterval(() => {
       if (apiDoneRef.current) return;
-      if (prog < 70) {
-        prog += 2;
-      } else if (prog < 85) {
-        prog += 0.5;
-      } else if (prog < 92) {
-        prog += 0.1;
+      if (prog < 50) {
+        prog += 1; // Fast to 50%
+      } else if (prog < 80) {
+        prog += 0.5; // Slower to 80%
+      } else if (prog < 95) {
+        prog += 0.1; // Crawl to 95% and hold
       }
       setProgressPercent(Math.round(prog));
-    }, 500);
+    }, 1000);
 
+    // --- THE POLLING ARCHITECTURE ---
     try {
       const formattedUrl = websiteUrl.startsWith('http') ? websiteUrl : `https://${websiteUrl}`;
 
-      const response = await axios.post(`${API_URL}/audit`, {
+      // 1. Start the Background Job
+      const startResponse = await axios.post(`${API_URL}/audit/start`, {
         targetUrl: formattedUrl,
       });
+      const { jobId } = startResponse.data;
 
-      const backendData = response.data;
-      const summary = backendData.report_summary || {};
-      const detections = backendData.visual_audit?.detections || [];
+      // 2. Poll the server every 5 seconds for status updates
+      const pollInterval = setInterval(async () => {
+        // Stop polling if we are already done
+        if (apiDoneRef.current) {
+          clearInterval(pollInterval);
+          return;
+        }
 
-      // Build report data
-      reportDataRef.current = {
-        url: formattedUrl,
-        date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-        raw: backendData,
-        riskScore: 100 - (summary.trust_score || 100),
-        riskLevel: summary.trust_score >= 80 ? 'Low' : summary.trust_score >= 50 ? 'Medium' : 'High',
-        detectedCount: detections.length,
-        avgConfidence: detections.length ? 88 : 0, // Using a default high confidence since our HF argmax prediction is strict
-        trustScore: summary.trust_score || 100,
-        status: summary.status || 'Compliant',
-        results: detections.map(d => ({
-          type: d.pattern || d.category,
-          evidence: d.element_text || 'Visual UI Element',
-          explanation: d.explanation, // This now holds the AI's legal reasoning
-          gdpr: d.regulation,
-          recommendation: d.recommendation,
-          coordinates: d.coordinates,
-        })),
-        regulatory_breakdown: backendData.regulatory_breakdown || [],
-        analysis_stats: backendData.analysis_stats || {},
-      };
-      apiDoneRef.current = true;
-      setApiDone(true);
+        try {
+          // Check the ticket!
+          const statusResponse = await axios.get(`${API_URL}/audit/status/${jobId}`);
+          const jobData = statusResponse.data;
+
+          if (jobData.status === 'completed') {
+            // --- AI FINISHED SUCCESSFULLY ---
+            clearInterval(pollInterval);
+
+            const backendData = jobData.report; // Grab the report from the job payload
+            const summary = backendData.report_summary || {};
+            const detections = backendData.visual_audit?.detections || [];
+
+            // Build report data
+            reportDataRef.current = {
+              url: formattedUrl,
+              date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+              raw: backendData,
+              riskScore: 100 - (summary.trust_score || 100),
+              riskLevel: summary.trust_score >= 80 ? 'Low' : summary.trust_score >= 50 ? 'Medium' : 'High',
+              detectedCount: detections.length,
+              avgConfidence: detections.length ? 88 : 0,
+              trustScore: summary.trust_score || 100,
+              status: summary.status || 'Compliant',
+              results: detections.map(d => ({
+                type: d.pattern || d.category,
+                evidence: d.element_text || 'Visual UI Element',
+                explanation: d.explanation, 
+                gdpr: d.regulation,
+                recommendation: d.recommendation,
+                coordinates: d.coordinates,
+              })),
+              regulatory_breakdown: backendData.regulatory_breakdown || [],
+              analysis_stats: backendData.analysis_stats || {},
+            };
+            
+            // Trigger the fast-forward to 100% and navigate
+            apiDoneRef.current = true;
+            setApiDone(true);
+
+          } else if (jobData.status === 'failed') {
+            // --- AI PIPELINE CRASHED ---
+            clearInterval(pollInterval);
+            if (stepInterval.current) clearInterval(stepInterval.current);
+            if (progressInterval.current) clearInterval(progressInterval.current);
+            setLoading(false);
+            setError(`Analysis failed: ${jobData.error}`);
+          }
+          // If status is 'processing', do nothing. It will loop again in 5 seconds.
+          
+        } catch (pollErr) {
+          // Error during the polling request itself (e.g., lost Wi-Fi)
+          clearInterval(pollInterval);
+          if (stepInterval.current) clearInterval(stepInterval.current);
+          if (progressInterval.current) clearInterval(progressInterval.current);
+          setLoading(false);
+          console.error("Polling error:", pollErr);
+          setError("Lost connection to the server while checking status.");
+        }
+      }, 5000); // <-- 5 second polling interval
+
     } catch (err) {
+      // This catch block now only triggers if it fails to START the job
       if (stepInterval.current) clearInterval(stepInterval.current);
       if (progressInterval.current) clearInterval(progressInterval.current);
       setLoading(false);
       console.error(err);
       const rawError = err.response?.data?.error || err.response?.data?.detail || err.message;
       const msg = typeof rawError === 'object' ? JSON.stringify(rawError) : rawError;
-      setError(`Analysis failed: ${msg}. Make sure all services are running.`);
+      setError(`Failed to start audit: ${msg}. Make sure all services are running.`);
     }
   };
-
   return (
     <>
       <div className="relative overflow-hidden">

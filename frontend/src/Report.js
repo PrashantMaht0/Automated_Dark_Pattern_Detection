@@ -81,8 +81,7 @@ export default function Report() {
     screenshotSrc = `/exports/${filename}`;
   }
   return (
-    
-    <div className="bg-gray-50 min-h-screen py-8">
+    <div className="bg-gray-50 min-h-screen py-4 sm:py-8">
       <style>
         {`
           @media print {
@@ -119,7 +118,8 @@ export default function Report() {
         </button>
 
         {/* Report Content */}
-        <div ref={reportRef} className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 mb-6" id="report-content">
+        {/* FIX 1: Changed p-8 to p-4 sm:p-8 for better mobile breathing room */}
+        <div ref={reportRef} className="bg-white rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-8 mb-6" id="report-content">
           <div className="hidden print:flex items-center gap-2 mb-8 border-b border-gray-200 pb-4">
             <i className="fas fa-shield-alt text-gray-400 text-3xl"></i>
             <span className="text-3xl font-extrabold text-gray-900 tracking-tight">
@@ -130,58 +130,58 @@ export default function Report() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center shrink-0">
                   <i className="fas fa-file-alt text-white"></i>
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900">Compliance Analysis Report</h1>
-                  <p className="text-sm text-gray-500">{reportData.url} • {reportData.date}</p>
+                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight">Compliance Analysis Report</h1>
+                  <p className="text-xs sm:text-sm text-gray-500 break-all">{reportData.url} • {reportData.date}</p>
                 </div>
               </div>
             </div>
             {/* Export Buttons... */}
-            <div className="mt-4 md:mt-0 flex gap-3 print:hidden">
-              <button onClick={downloadPDF} className="px-4 py-2 bg-red-50 text-red-700 rounded-lg font-medium hover:bg-red-100 transition-colors flex items-center gap-2">
-                <i className="fas fa-file-pdf"></i> Download PDF
+            {/* FIX 2: Added flex-wrap so buttons don't overflow on small screens */}
+            <div className="mt-4 md:mt-0 flex flex-wrap gap-2 sm:gap-3 print:hidden">
+              <button onClick={downloadPDF} className="px-3 py-2 sm:px-4 bg-red-50 text-red-700 rounded-lg text-sm sm:text-base font-medium hover:bg-red-100 transition-colors flex items-center gap-2">
+                <i className="fas fa-file-pdf"></i> PDF
               </button>
-              <button onClick={downloadPNG} className="px-4 py-2 bg-green-50 text-green-700 rounded-lg font-medium hover:bg-green-100 transition-colors flex items-center gap-2">
-                <i className="fas fa-image"></i> Download PNG
+              <button onClick={downloadPNG} className="px-3 py-2 sm:px-4 bg-green-50 text-green-700 rounded-lg text-sm sm:text-base font-medium hover:bg-green-100 transition-colors flex items-center gap-2">
+                <i className="fas fa-image"></i> PNG
               </button>
-              <button onClick={downloadJSON} className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg font-medium hover:bg-blue-100 transition-colors flex items-center gap-2">
-                <i className="fas fa-code"></i> Download JSON
+              <button onClick={downloadJSON} className="px-3 py-2 sm:px-4 bg-blue-50 text-blue-700 rounded-lg text-sm sm:text-base font-medium hover:bg-blue-100 transition-colors flex items-center gap-2">
+                <i className="fas fa-code"></i> JSON
               </button>
-
             </div>
           </div>
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <div className={`rounded-xl p-6 text-white ${reportData.riskLevel === 'High' ? 'bg-gradient-to-br from-red-500 to-red-600' : 'bg-gradient-to-br from-green-500 to-green-600'}`}>
-              <div className="text-4xl font-bold mb-1">{reportData.riskScore}/100</div>
+              <div className="text-3xl sm:text-4xl font-bold mb-1">{reportData.riskScore}/100</div>
               <div className="text-sm opacity-80">{reportData.riskLevel} Risk</div>
             </div>
             <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white">
-              <div className="text-4xl font-bold mb-1">{reportData.detectedCount}</div>
+              <div className="text-3xl sm:text-4xl font-bold mb-1">{reportData.detectedCount}</div>
               <div className="text-sm opacity-80">Patterns Detected</div>
             </div>
             <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white">
-              <div className="text-4xl font-bold mb-1">{reportData.avgConfidence}%</div>
+              <div className="text-3xl sm:text-4xl font-bold mb-1">{reportData.avgConfidence}%</div>
               <div className="text-sm opacity-80">AI Confidence</div>
             </div>
             <div className={`rounded-xl p-6 text-white ${reportData.trustScore >= 80 ? 'bg-gradient-to-br from-green-500 to-green-600' : 'bg-gradient-to-br from-red-500 to-red-600'}`}>
-              <div className="text-4xl font-bold mb-1">{reportData.trustScore}/100</div>
+              <div className="text-3xl sm:text-4xl font-bold mb-1">{reportData.trustScore}/100</div>
               <div className="text-sm opacity-80">{reportData.status}</div>
             </div>
           </div>
 
-          {/* --- NEW VISUAL AUDIT SECTION (Always Visible) --- */}
-          <div className="mb-8 border border-gray-200 rounded-xl overflow-hidden bg-gray-100 p-4">
-            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+          {/* --- VISUAL AUDIT SECTION --- */}
+          <div className="mb-8 border border-gray-200 rounded-xl overflow-hidden bg-gray-100 p-2 sm:p-4">
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
               <i className="fas fa-desktop text-blue-600"></i>
               Visual Audit Map
             </h3>
             
-            <div className="relative mx-auto border border-gray-300 shadow-md bg-white" style={{ maxWidth: '800px' }}>
+            <div className="relative mx-auto border border-gray-300 shadow-md bg-white w-full" style={{ maxWidth: '800px' }}>
               {/* The Base Screenshot */}
               <img 
                 src={screenshotSrc} 
@@ -189,7 +189,7 @@ export default function Report() {
                 className="w-full h-auto block"
               />
 
-              {/* The Overlay Bounding Boxes (Will safely render nothing if results is empty) */}
+              {/* The Overlay Bounding Boxes */}
               {reportData.results && reportData.results.map((result, i) => {
                 if (!result.coordinates) return null;
                 
@@ -204,7 +204,7 @@ export default function Report() {
                 return (
                   <div
                     key={i}
-                    className="absolute border-2 border-red-500 bg-red-500 flex items-start justify-start cursor-crosshair transition-all duration-200"
+                    className="absolute border border-red-500 sm:border-2 bg-red-500 flex items-start justify-start cursor-crosshair transition-all duration-200"
                     style={{
                       left, top, width, height,
                       backgroundColor: isHovered ? 'rgba(239, 68, 68, 0.4)' : 'rgba(239, 68, 68, 0.1)',
@@ -213,7 +213,7 @@ export default function Report() {
                     }}
                     title={result.evidence}
                   >
-                    <span className="absolute -top-6 left-0 bg-red-600 text-white text-[10px] px-1 rounded whitespace-nowrap shadow">
+                    <span className="absolute -top-5 sm:-top-6 left-0 bg-red-600 text-white text-[8px] sm:text-[10px] px-1 rounded whitespace-nowrap shadow">
                       {result.type}
                     </span>
                   </div>
@@ -225,15 +225,16 @@ export default function Report() {
 
           {/* Results Table */}
           {reportData.results.length > 0 && (
-          <div className="overflow-hidden rounded-xl border border-gray-200">
-            <table className="w-full">
+          /* FIX 3: Changed overflow-hidden to overflow-x-auto to allow horizontal scrolling on mobile */
+          <div className="overflow-x-auto rounded-xl border border-gray-200">
+            <table className="w-full min-w-[800px]">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Pattern Type</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Evidence Snippet</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Explanation</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">GDPR Violations</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Recommendation</th>
+                  <th className="px-4 sm:px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Pattern Type</th>
+                  <th className="px-4 sm:px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Evidence Snippet</th>
+                  <th className="px-4 sm:px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Explanation</th>
+                  <th className="px-4 sm:px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">GDPR Violations</th>
+                  <th className="px-4 sm:px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Recommendation</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -244,23 +245,23 @@ export default function Report() {
                     onMouseEnter={() => setHoveredIndex(i)}
                     onMouseLeave={() => setHoveredIndex(null)}
                   >
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getPatternClass(result.type)}`}>
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 sm:px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getPatternClass(result.type)}`}>
                         {result.type}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900 max-w-xs">
+                    <td className="px-4 sm:px-6 py-4 text-sm text-gray-900 max-w-[200px] sm:max-w-xs break-words">
                       <span className="font-mono bg-gray-100 px-1 rounded">"{result.evidence}"</span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600 max-w-xs">
+                    <td className="px-4 sm:px-6 py-4 text-sm text-gray-600 min-w-[200px] max-w-xs">
                       {result.explanation}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                       <span className="px-2 py-1 bg-red-50 text-red-700 rounded text-xs font-bold border border-red-100">
                         {result.gdpr}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600 max-w-xs">
+                    <td className="px-4 sm:px-6 py-4 text-sm text-gray-600 min-w-[200px] max-w-xs">
                       {result.recommendation}
                     </td>
                   </tr>
@@ -269,14 +270,15 @@ export default function Report() {
             </table>
           </div>
           )}
+          
           {/* Empty State */}
           {reportData.results.length === 0 && (
-            <div className="text-center py-12">
+            <div className="text-center py-12 px-4">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <i className="fas fa-check-circle text-3xl text-green-600"></i>
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">No Dark Patterns Detected</h3>
-              <p className="text-gray-600">Great news! Our analysis didn't find any deceptive design patterns on this page.</p>
+              <p className="text-gray-600 text-sm sm:text-base">Great news! Our analysis didn't find any deceptive design patterns on this page.</p>
             </div>
           )}
         
