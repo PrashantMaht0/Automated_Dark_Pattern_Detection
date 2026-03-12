@@ -43,9 +43,9 @@ ai-service/model_weights/
 # ====================================================================
 # Ignore the shared docker volume where Selenium saves screenshots
 /exports/
-*.png
-*.jpg
-*.jpeg
+exports/*.png
+exports/*.jpg
+exports/*.jpeg
 
 # ====================================================================
 # Environment Variables & Secrets
