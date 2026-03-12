@@ -12,7 +12,7 @@ The primary objective of this project is to provide a highly accessible, automat
 ## Live Application
 *(Click the image below to access the live Dark Pattern Detector)*
 
-[![Dark Pattern Detector Dashboard](./frontend/res/image.png)](https://www.darkpatterndetector.dev) 
+[![Dark Pattern Detector Dashboard]./frontend/res/image.png](https://www.darkpatterndetector.dev) 
 
 ## Tech Stack
 * **Frontend:** React.js, Tailwind CSS
