@@ -80,10 +80,8 @@ class ComplianceAuditor:
     def _verify_with_llm(self, element_text, layout_label):
         """The Stage 2 Classifier: Asks Gemini to legally categorize the text using dynamic map data."""
         
-        # 1. Dynamically build the legal framework text directly from your REGULATORY_MAP!
         legal_framework = "\n".join([f"{i+1}. {k.upper()}: {v['description']}" for i, (k, v) in enumerate(REGULATORY_MAP.items())])
         
-        # 2. Dynamically extract the exact category keys the LLM is allowed to use
         allowed_categories = "[" + ", ".join(REGULATORY_MAP.keys()) + ", safe]"
 
         prompt = f"""
@@ -124,17 +122,13 @@ class ComplianceAuditor:
             result_text = response.text.replace('```json', '').replace('```', '').strip()
             data = json.loads(result_text)
             
-            # Safely extract BOTH the category and the reasoning
             category = data.get("category", "safe")
             reasoning = data.get("reasoning", "No explanation provided.")
-            
-            
-            # FIX: Return BOTH variables so Python can unpack them!
+
             return category, reasoning
             
         except Exception as e:
             print(f"[-] LLM Classification Error: {e}")
-            # FIX: Return BOTH variables here too!
             return "safe", "AI failed to generate reasoning."
 
     def analyze_detections(self, hf_api_response):
@@ -144,16 +138,13 @@ class ComplianceAuditor:
         
         for detection in ai_predictions:
             layout_label = detection.get("predicted_label") 
-            bbox = detection.get("box_2d") or [0, 0, 0, 0] # Added safeguard
+            bbox = detection.get("box_2d") or [0, 0, 0, 0] 
             element_text = detection.get("text", "") 
 
             if layout_label in ["action_button", "overlay_content", "deceptive_element"]:
                 print(f"[*] Auditing text: '{element_text}'")
                 
-                # This unpacking will now work perfectly!
                 category, reasoning = self._verify_with_llm(element_text, layout_label)
-                
-                # Sleep for 1.5 seconds to prevent Google API rate limiting (429 errors)
                 time.sleep(1.5)
 
                 if category in REGULATORY_MAP:
@@ -165,7 +156,7 @@ class ComplianceAuditor:
                         "element_text": element_text, 
                         "category": rule["category"],
                         "pattern": rule["pattern_name"],
-                        "explanation": reasoning, # Injects the dynamic reasoning into the table!
+                        "explanation": reasoning, 
                         "regulation": rule["regulation"],
                         "recommendation": rule["remedy"],
                         "coordinates": {

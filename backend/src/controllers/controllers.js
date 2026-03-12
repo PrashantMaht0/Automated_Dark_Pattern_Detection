@@ -8,11 +8,9 @@ const crypto = require('crypto');
 // Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// Use Docker Service Names for internal communication
 const SCRAPER_API_URL = process.env.SCRAPER_API_URL || 'http://scraper-service:8000/api/capture';
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://ai-service:8001/audit';
 
-// This Map will act as our temporary database to hold job statuses
 const activeJobs = new Map();
 
 // --- ENDPOINT 1: Start the Audit and Reply Instantly ---
@@ -22,22 +20,12 @@ exports.startAudit = async (req, res) => {
     if (!targetUrl) {
         return res.status(400).json({ error: "Please provide a targetUrl." });
     }
-
-    // 1. Generate a unique Ticket Number (Job ID)
     const jobId = crypto.randomUUID();
-
-    // 2. Save the initial job status to our "database"
     activeJobs.set(jobId, { status: 'processing', report: null, error: null });
-
-    // 3. IMMEDIATELY send the 202 Accepted response back to the phone/browser
     res.status(202).json({ jobId, status: 'processing', message: 'Audit started in the background.' });
-
-    // 4. Kick off the heavy AI pipeline (Notice there is NO 'await' here!)
     runBackgroundAudit(jobId, targetUrl, req.hostname, process.env.PORT || 5000);
 };
 
-
-// --- BACKGROUND WORKER: The Heavy Lifting ---
 async function runBackgroundAudit(jobId, targetUrl, hostname, port) {
     let screenshotPath = null;
     let screenshotFilename = null;
@@ -89,10 +77,8 @@ async function runBackgroundAudit(jobId, targetUrl, hostname, port) {
         const result = await model.generateContent([prompt, imageData]);
         const responseText = result.response.text();
 
-        // 1. Strip out the ```json and ``` markdown formatting
         let cleanedText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 
-        // 2. Look for square brackets [ ] since the prompt asks for an array
         const firstBracket = cleanedText.indexOf('[');
         const lastBracket = cleanedText.lastIndexOf(']');
 
@@ -100,10 +86,7 @@ async function runBackgroundAudit(jobId, targetUrl, hostname, port) {
             cleanedText = cleanedText.substring(firstBracket, lastBracket + 1);
         }
 
-        // 3. Strip trailing commas before closing brackets or braces
         cleanedText = cleanedText.replace(/,\s*([}\]])/g, '$1');
-
-        // 4. Safely parse!
         const geminiData = JSON.parse(cleanedText);
 
         // --- 3. FORMAT FOR LAYOUTLM ---
@@ -151,13 +134,10 @@ async function runBackgroundAudit(jobId, targetUrl, hostname, port) {
         finalReport.raw.screenshot_url = publicScreenshotUrl;
 
         console.log(`[*] [Job ${jobId}] Pipeline Complete! Report saved to memory.`);
-        
-        // Update the job status to completed!
         activeJobs.set(jobId, { status: 'completed', report: finalReport, error: null });
 
     } catch (error) {
         console.error(`[-] [Job ${jobId}] Background Audit Failed:`, error.message);
-        // Save the error so the frontend knows to stop polling
         activeJobs.set(jobId, { status: 'failed', report: null, error: error.message || "Internal Server Error" });
     }
 }
@@ -171,7 +151,5 @@ exports.checkAuditStatus = (req, res) => {
     if (!job) {
         return res.status(404).json({ error: "Job ID not found or expired." });
     }
-
-    // Returns { status: 'processing' | 'completed' | 'failed', report: {...}, error: '...' }
     res.status(200).json(job); 
 };

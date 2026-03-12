@@ -22,7 +22,7 @@ def get_chrome_options():
     options.add_argument("--disable-dev-shm-usage") 
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
-    options.add_argument("--hide-scrollbars") # Added to prevent UI interference in OCR
+    options.add_argument("--hide-scrollbars") 
     return options
 
 @app.post("/api/capture")
@@ -37,7 +37,6 @@ async def capture_screenshot(request: ScrapeRequest):
         driver.get(request.target_url)
         
         # We enforce a 4-second wait to ensure dynamic cookie banners and popups load 
-        # as these often contain critical GDPR consent mechanisms.
         time.sleep(4) 
         
         # Use Chrome DevTools Protocol (CDP) for a perfect full-page screenshot

@@ -5,17 +5,13 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 
-// Import your newly created routes
 const apiRoutes = require('./routes/routes');
 
 const app = express();
 
-// --- Middleware ---
 app.use(cors());
 app.use(express.json());
 
-// --- Static File Hosting ---
-// This ensures React can fetch the screenshot images using a URL
 const exportsDir = path.join(__dirname, '../../exports');
 if (!fs.existsSync(exportsDir)) {
     fs.mkdirSync(exportsDir, { recursive: true });
