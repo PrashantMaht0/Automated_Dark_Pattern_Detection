@@ -10,9 +10,8 @@ The primary objective of this project is to provide a highly accessible, automat
 * **Gunatheeth Reddy Jampala** - A00335996
 
 ## Live Application
-*(Click the image below to access the live Dark Pattern Detector)*
 
-[![Dark Pattern Detector Dashboard]./frontend/res/image.png](https://www.darkpatterndetector.dev) 
+[![Dark Pattern Detector Dashboard](./frontend/public/Website_home_page.png)](https://www.darkpatterndetector.dev) 
 
 ## Tech Stack
 * **Frontend:** React.js, Tailwind CSS
@@ -32,12 +31,12 @@ Our microservices architecture is divided into the following core directories:
 
 ## AI Model Performance & Capabilities
 
-**Current Model Test Score:** `
+**Current Model Test Score:** 
 - Accuracy:  0.9280
 - Precision: 0.8952
 - Recall:    0.9066
 - F1 Score:  0.9009
-`
+
 
 The current iteration of our system is capable of accurately identifying seven distinct categories of dark patterns and mapping them to specific GDPR articles:
 
