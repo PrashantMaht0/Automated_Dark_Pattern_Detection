@@ -30,15 +30,18 @@ async def run_audit(
         words_list = json.loads(words)
         boxes_list = json.loads(boxes)
         
-        # --- THE SLIDING WINDOW CHUNKING LOGIC ---
+        # --- THE UPGRADED SLIDING WINDOW CHUNKING LOGIC ---
         CHUNK_SIZE = 400
+        OVERLAP = 50  # Give the model a 50-word buffer to prevent cutting sentences in half!
+        STEP = CHUNK_SIZE - OVERLAP
+        
         all_flagged_predictions = []
         
         total_elements = len(words_list)
         print(f"[*] Starting Sliding Window analysis for {total_elements} elements on {target_url}...")
 
-        # Loop through the page in batches of 400 to prevent HF from hitting the 512 token limit
-        for i in range(0, total_elements, CHUNK_SIZE):
+        # Step forward by 350, grabbing 400 words each time
+        for i in range(0, total_elements, STEP):
             chunk_words = words_list[i : i + CHUNK_SIZE]
             chunk_boxes = boxes_list[i : i + CHUNK_SIZE]
             
@@ -47,7 +50,6 @@ async def run_audit(
                 
             print(f"[*] Sending Chunk to Hugging Face: {i} to {i + len(chunk_words)}...")
             
-            # Package this specific chunk to send to Hugging Face
             files = {"screenshot": (screenshot.filename, image_bytes, screenshot.content_type)}
             data = {
                 "words": json.dumps(chunk_words), 
@@ -58,15 +60,31 @@ async def run_audit(
 
             if hf_response.status_code != 200:
                 print(f"[!] Warning: HF API Error on chunk {i}: {hf_response.text}")
-                continue # Skip this chunk if HF throws a timeout or error, but keep processing the rest of the page!
+                continue 
 
             chunk_predictions = hf_response.json()
             
-            # Combine the flagged items from this chunk into our master list
+            # --- THE SILENT FAILURE FIX ---
             if isinstance(chunk_predictions, list):
                 all_flagged_predictions.extend(chunk_predictions)
+            elif isinstance(chunk_predictions, dict) and "detections" in chunk_predictions:
+                # If your API actually returns a dictionary with a "detections" key
+                all_flagged_predictions.extend(chunk_predictions["detections"])
+            else:
+                # Force the terminal to tell us if the format is wrong!
+                print(f"[?] Unexpected HF Response Format on chunk {i}: {str(chunk_predictions)[:100]}...")
 
-        print(f"[+] Chunking complete! Found {len(all_flagged_predictions)} total suspicious elements to audit.")
+        # Optional: Remove duplicates that might occur in the 50-word overlap zones
+        # (Assuming your predictions are dicts that have a 'text' key)
+        unique_predictions = []
+        seen_texts = set()
+        for p in all_flagged_predictions:
+            text_val = p.get('text', str(p)) # Fallback if 'text' isn't the exact key
+            if text_val not in seen_texts:
+                seen_texts.add(text_val)
+                unique_predictions.append(p)
+
+        print(f"[+] Chunking complete! Found {len(unique_predictions)} unique suspicious elements to audit.")
 
         # --- STAGE 2: THE GEMINI LOGICAL AUDIT ---
         print("[*] Generating Legal Compliance Report via Gemini...")
