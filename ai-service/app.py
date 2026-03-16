@@ -65,14 +65,18 @@ async def run_audit(
             chunk_predictions = hf_response.json()
             
             # --- THE SILENT FAILURE FIX ---
+            # --- THE SILENT FAILURE FIX (UPDATED) ---
             if isinstance(chunk_predictions, list):
+                # If it's a raw list
                 all_flagged_predictions.extend(chunk_predictions)
+            elif isinstance(chunk_predictions, dict) and "flagged_elements" in chunk_predictions:
+                # BINGO: This matches your actual HF API output!
+                all_flagged_predictions.extend(chunk_predictions["flagged_elements"])
             elif isinstance(chunk_predictions, dict) and "detections" in chunk_predictions:
-                # If your API actually returns a dictionary with a "detections" key
+                # Just in case you have older endpoints
                 all_flagged_predictions.extend(chunk_predictions["detections"])
             else:
-                # Force the terminal to tell us if the format is wrong!
-                print(f"[?] Unexpected HF Response Format on chunk {i}: {str(chunk_predictions)[:100]}...")
+                print(f"[?] Unexpected HF Response Format on chunk {i}: {str(chunk_predictions)[:200]}...")
 
         # Optional: Remove duplicates that might occur in the 50-word overlap zones
         # (Assuming your predictions are dicts that have a 'text' key)
