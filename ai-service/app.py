@@ -1,9 +1,9 @@
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 import requests
 import os
+import json
 from dotenv import load_dotenv
 from compliance_engine import ComplianceAuditor
-import json
 
 # Load your Hugging Face token from the .env file in ai-service/
 load_dotenv()
@@ -21,28 +21,63 @@ async def run_audit(
     boxes: str = Form(...)
 ):
     try:
-        # 1. Package the incoming data to forward to Hugging Face
         headers = {"Authorization": f"Bearer {HF_TOKEN}"}
+        
+        # Read the image into memory ONCE so we can reuse it for multiple chunks
         image_bytes = await screenshot.read()
-        files = {"screenshot": (screenshot.filename, image_bytes, screenshot.content_type)}
-        data = {"words": words, "boxes": boxes}
+        
+        # Parse the incoming JSON strings into Python lists
+        words_list = json.loads(words)
+        boxes_list = json.loads(boxes)
+        
+        # --- THE SLIDING WINDOW CHUNKING LOGIC ---
+        CHUNK_SIZE = 400
+        all_flagged_predictions = []
+        
+        total_elements = len(words_list)
+        print(f"[*] Starting Sliding Window analysis for {total_elements} elements on {target_url}...")
 
-        print(f"[*] Analyzing {target_url} via Hugging Face Cloud...")
-        hf_response = requests.post(HF_API_URL, headers=headers, files=files, data=data)
+        # Loop through the page in batches of 400 to prevent HF from hitting the 512 token limit
+        for i in range(0, total_elements, CHUNK_SIZE):
+            chunk_words = words_list[i : i + CHUNK_SIZE]
+            chunk_boxes = boxes_list[i : i + CHUNK_SIZE]
+            
+            if not chunk_words:
+                continue
+                
+            print(f"[*] Sending Chunk to Hugging Face: {i} to {i + len(chunk_words)}...")
+            
+            # Package this specific chunk to send to Hugging Face
+            files = {"screenshot": (screenshot.filename, image_bytes, screenshot.content_type)}
+            data = {
+                "words": json.dumps(chunk_words), 
+                "boxes": json.dumps(chunk_boxes)
+            }
 
-        if hf_response.status_code != 200:
-            raise Exception(f"Hugging Face API Error: {hf_response.text}")
+            hf_response = requests.post(HF_API_URL, headers=headers, files=files, data=data)
 
-        ai_predictions = hf_response.json()
+            if hf_response.status_code != 200:
+                print(f"[!] Warning: HF API Error on chunk {i}: {hf_response.text}")
+                continue # Skip this chunk if HF throws a timeout or error, but keep processing the rest of the page!
 
+            chunk_predictions = hf_response.json()
+            
+            # Combine the flagged items from this chunk into our master list
+            if isinstance(chunk_predictions, list):
+                all_flagged_predictions.extend(chunk_predictions)
 
-        # 2. Pass the AI predictions into your Compliance Engine
-        print("[*] Generating Legal Compliance Report...")
+        print(f"[+] Chunking complete! Found {len(all_flagged_predictions)} total suspicious elements to audit.")
+
+        # --- STAGE 2: THE GEMINI LOGICAL AUDIT ---
+        print("[*] Generating Legal Compliance Report via Gemini...")
         auditor = ComplianceAuditor(target_url=target_url)
-        final_report = auditor.analyze_detections(ai_predictions)
+        
+        # We pass the MASSIVE stitched list of all found patterns to your Gemini engine
+        final_report = auditor.analyze_detections(all_flagged_predictions)
 
         # 3. Return the formatted JSON to your Node.js backend
         return final_report
 
     except Exception as e:
+        print(f"[!] Fatal Audit Error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))

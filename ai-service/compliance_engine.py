@@ -7,9 +7,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Initialize the stable google-generativeai SDK
+# Initialize the SDK and force strict JSON output to prevent parsing crashes
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-llm_model = genai.GenerativeModel('gemini-2.5-flash')
+llm_model = genai.GenerativeModel(
+    model_name='gemini-2.5-flash',
+    generation_config={"response_mime_type": "application/json"}
+)
 
 REGULATORY_MAP = {
     "preselected_invasive_default": {
@@ -81,46 +84,43 @@ class ComplianceAuditor:
         """The Stage 2 Classifier: Asks Gemini to legally categorize the text using dynamic map data."""
         
         legal_framework = "\n".join([f"{i+1}. {k.upper()}: {v['description']}" for i, (k, v) in enumerate(REGULATORY_MAP.items())])
-        
         allowed_categories = "[" + ", ".join(REGULATORY_MAP.keys()) + ", safe]"
 
         prompt = f"""
-        ACT AS: A Senior Digital Rights Attorney and GDPR Auditor specialized in the Digital Services Act (DSA) Article 25 & 27.
+        ACT AS: A Senior Digital Rights Attorney and GDPR Auditor.
         
-        TASK: Conduct a high-stakes audit on a specific UI element to determine if it constitutes a "Dark Pattern" (deceptive design).
+        TASK: Evaluate this specific UI element text flagged by a Vision AI. Is it a genuine "Dark Pattern" (deceptive design) or a normal UI element?
         
         CONTEXT:
         - Element Type: {layout_label}
         - Detected Text: "{element_text}"
         
-        LEGAL REFERENCE FRAMEWORK:
+        LEGAL FRAMEWORK (CATEGORIES):
         {legal_framework}
 
-        AUDIT RULES:
-        - ZERO TOLERANCE FOR FALSE POSITIVES: If the text is standard, polite, or merely descriptive (e.g., "We use cookies", "Learn More", "Accept"), it MUST be labeled 'safe'.
-        - CONTEXT MATTERS: "No thanks" is safe. "No, I prefer to pay more" is emotional_steering.
-        - DEFAULT TO SAFE: If you are less than 95% certain a pattern exists, return 'safe'.
+        CRITICAL: NEGATIVE EXAMPLES (IGNORE THESE - LABEL AS 'safe')
+        - Standard navigation ("Home", "About Us", "Contact").
+        - Standard actions ("Login", "Submit", "Search", "Read More", "Accept").
+        - Cookie banners with fair choices ("Accept All" alongside "Decline All").
+        - "No thanks" or "Close" buttons.
 
-        STEP-BY-STEP REASONING:
-        1. Analyze the literal meaning of the text.
-        2. Evaluate the psychological intent (Is it steering, shaming, or confusing?).
-        3. Compare against the legal frameworks above.
-        
+        AUDIT RULES:
+        - ZERO TOLERANCE FOR FALSE POSITIVES: If the text is standard, polite, or merely descriptive, it MUST be labeled 'safe'.
+        - CONTEXT MATTERS: "No thanks" is safe. "No, I prefer to pay more" is emotional_steering.
+
         OUTPUT FORMAT:
-        You must return a raw JSON object with this exact structure:
+        Return ONLY a JSON object. You MUST provide the "reasoning" key BEFORE the "category" key to ensure logical chain-of-thought analysis.
         {{
-            "reasoning": "A 1-sentence legal justification for your decision.",
+            "reasoning": "CHAIN OF THOUGHT: Step-by-step, logically explain why this text violates user intent OR why it is perfectly safe.",
             "category": "one_of_the_categories_below_or_safe"
         }}
 
-        CATEGORIES:
-        {allowed_categories}
+        ALLOWED CATEGORIES: {allowed_categories}
         """
         
         try:
             response = llm_model.generate_content(prompt)
-            result_text = response.text.replace('```json', '').replace('```', '').strip()
-            data = json.loads(result_text)
+            data = json.loads(response.text) # Clean parsing since response_mime_type is JSON
             
             category = data.get("category", "safe")
             reasoning = data.get("reasoning", "No explanation provided.")
@@ -133,21 +133,29 @@ class ComplianceAuditor:
 
     def analyze_detections(self, hf_api_response):
         """Orchestrates the two-stage pipeline."""
-        ai_predictions = hf_api_response.get("flagged_elements", [])
-        print("\n[*] Running Stage 2 LLM Classification on flagged elements...")
+        
+        # Accommodates both old list structure and new dictionary structure
+        if isinstance(hf_api_response, list):
+            ai_predictions = hf_api_response
+        else:
+            ai_predictions = hf_api_response.get("flagged_elements", [])
+            
+        print(f"\n[*] Running Stage 2 LLM Classification on {len(ai_predictions)} flagged elements...")
         
         for detection in ai_predictions:
-            layout_label = detection.get("predicted_label") 
-            bbox = detection.get("box_2d") or [0, 0, 0, 0] 
+            # Safely extract data handling potential missing keys from Hugging Face output
+            layout_label = detection.get("layoutlm_label", "deceptive_element") 
+            bbox = detection.get("box_2d", [0, 0, 0, 0])
             element_text = detection.get("text", "") 
 
-            if layout_label in ["action_button", "overlay_content", "deceptive_element"]:
+            if element_text:
                 print(f"[*] Auditing text: '{element_text}'")
                 
                 category, reasoning = self._verify_with_llm(element_text, layout_label)
-                time.sleep(1.5)
+                time.sleep(1.5) # Prevents Gemini API rate limiting
 
                 if category in REGULATORY_MAP:
+                    print(f"    [!] Violation Found: {category}")
                     rule = REGULATORY_MAP[category]
                     self.trust_score -= rule["penalty"]
                     
