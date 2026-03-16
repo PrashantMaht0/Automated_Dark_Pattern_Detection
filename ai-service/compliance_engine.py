@@ -161,7 +161,8 @@ class ComplianceAuditor:
                     
                     self.findings.append({
                         "type": category, 
-                        "element_text": element_text, 
+                        "element_text": element_text,
+                        "sentence": element_text,
                         "category": rule["category"],
                         "pattern": rule["pattern_name"],
                         "explanation": reasoning, 
