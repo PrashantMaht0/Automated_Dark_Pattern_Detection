@@ -4,7 +4,6 @@
 
 [![Live App](https://img.shields.io/badge/Live%20App-darkpatterndetector.dev-blue?style=flat-square)](https://www.darkpatterndetector.dev)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/your-org/dark-pattern-detector/ci.yml?style=flat-square)](/.github/workflows)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)](https://reactjs.org/)
