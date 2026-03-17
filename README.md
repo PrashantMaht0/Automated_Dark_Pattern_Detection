@@ -195,7 +195,7 @@ Contributions are welcome! Please open an issue or submit a pull request.
 4. Push to the branch: `git push origin feature/your-feature`
 5. Open a Pull Request
 
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting.
+<!-- Please read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting. 
 
 ---
 
@@ -203,7 +203,7 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting.
 
 Distributed under the MIT License. See [LICENSE](LICENSE) for details.
 
----
+--- -->
 
 ## 🙏 Acknowledgements
 
