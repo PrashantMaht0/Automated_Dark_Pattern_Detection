@@ -49,10 +49,10 @@ The tool is aimed at developers, compliance officers, UX researchers, and regula
 
 | Metric    | Score  |
 |-----------|--------|
-| Accuracy  | 0.9280 |
+| Accuracy  | 0.8280 |
 | Precision | 0.8952 |
 | Recall    | 0.9066 |
-| F1 Score  | 0.9009 |
+| F1 Score  | 0.8909 |
 
 ### Detected Dark Patterns & GDPR Mapping
 
