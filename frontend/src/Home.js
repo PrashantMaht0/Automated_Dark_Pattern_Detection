@@ -276,7 +276,7 @@ export default function Home() {
                   <i className="fas fa-robot text-blue-600 text-xl"></i>
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-2">AI-Powered Detection</h3>
-                <p className="text-gray-600 text-sm">Advanced Transformer models (RoBERTa + Fusion) trained to identify deceptive design patterns with dual-model verification.</p>
+                <p className="text-gray-600 text-sm">Advanced Transformer models (LayoutLM) trained to identify deceptive design patterns with multi-modal verification.</p>
               </div>
 
               <div className="bg-white/80 backdrop-blur rounded-2xl p-6 border border-gray-100 hover-lift">

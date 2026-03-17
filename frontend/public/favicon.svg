@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4284F5"/>
+      <stop offset="100%" stop-color="#7B5CF6"/>
+    </linearGradient>
+  </defs>
+  <!-- Rounded square background -->
+  <rect width="100" height="100" rx="20" fill="url(#bg)"/>
+  <!-- Shield right half (semi-transparent white) -->
+  <path d="M50 17 L71 25 L71 51 C71 63 62 72 50 78 Z" fill="white" fill-opacity="0.45"/>
+  <!-- Shield left half (solid white) -->
+  <path d="M50 17 L29 25 L29 51 C29 63 38 72 50 78 Z" fill="white"/>
+  <!-- Full shield outline so it looks connected -->
+  <path d="M50 17 L71 25 L71 51 C71 63 62 72 50 78 C38 72 29 63 29 51 L29 25 Z"
+        fill="none" stroke="white" stroke-width="1.5" stroke-opacity="0.3"/>
+</svg>
