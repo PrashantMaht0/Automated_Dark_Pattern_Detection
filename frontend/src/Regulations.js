@@ -575,8 +575,8 @@ export default function Regulations() {
               <div className="hidden bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-10 items-center justify-center" style={{ minHeight: '240px' }}>
                 <div className="flex flex-col md:flex-row items-center justify-center space-y-6 md:space-y-0 md:space-x-12">
                   <div className="text-center">
-                    <div className="w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-blue-500/30">
-                      <i className="fas fa-shield-alt text-white text-3xl"></i>
+                    <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-blue-500/30 overflow-hidden">
+                      <img src="/gdpr_logo.png" alt="GDPR Official Logo" className="w-full h-full object-cover" />
                     </div>
                     <p className="font-bold text-gray-900 text-lg">GDPR</p>
                     <p className="text-gray-500 text-xs">Since 2018</p>
@@ -613,8 +613,8 @@ export default function Regulations() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
             <div className="bg-blue-50 rounded-xl p-5 border border-blue-100">
               <div className="flex items-center mb-3">
-                <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
-                  <i className="fas fa-shield-alt text-white"></i>
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center mr-3 overflow-hidden">
+                  <img src="/gdpr_logo.png" alt="GDPR" className="w-full h-full object-cover" />
                 </div>
                 <div>
                   <h4 className="font-semibold text-gray-900">GDPR</h4>

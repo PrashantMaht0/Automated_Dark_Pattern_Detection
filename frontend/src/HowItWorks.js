@@ -117,46 +117,102 @@ export default function HowItWorks() {
             Our platform is built as a microservices architecture, with each component handling a specific stage of the detection pipeline. This modular design ensures scalability, maintainability, and the ability to upgrade individual components independently.
           </p>
 
-          {/* Architecture Image */}
+          {/* Architecture Diagram — Vertical Layered (Blue Theme) */}
           <figure className="my-8">
-            <div className="bg-gray-50 rounded-2xl border border-gray-200 p-4 overflow-hidden">
-              <img
-                src="/system_architecture.png"
-                alt="System Architecture Diagram"
-                className="w-full rounded-xl"
-                onError={(e) => { e.target.style.display = 'none'; e.target.nextElementSibling.style.display = 'flex'; }}
-              />
-              <div className="hidden bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-10 items-center justify-center">
-                <div className="text-center">
-                  <div className="flex items-center justify-center space-x-3 mb-6">
-                    <div className="w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center">
-                      <i className="fas fa-globe text-blue-600 text-2xl"></i>
-                    </div>
-                    <i className="fas fa-arrow-right text-gray-400"></i>
-                    <div className="w-16 h-16 bg-purple-100 rounded-xl flex items-center justify-center">
-                      <i className="fas fa-camera text-purple-600 text-2xl"></i>
-                    </div>
-                    <i className="fas fa-arrow-right text-gray-400"></i>
-                    <div className="w-16 h-16 bg-green-100 rounded-xl flex items-center justify-center">
-                      <i className="fas fa-brain text-green-600 text-2xl"></i>
-                    </div>
-                    <i className="fas fa-arrow-right text-gray-400"></i>
-                    <div className="w-16 h-16 bg-red-100 rounded-xl flex items-center justify-center">
-                      <i className="fas fa-file-alt text-red-600 text-2xl"></i>
-                    </div>
+            <div className="bg-gradient-to-b from-blue-50 to-indigo-50 rounded-2xl border-2 border-blue-200 p-5 sm:p-6">
+              <h3 className="text-center font-bold text-gray-800 text-sm sm:text-base mb-5 leading-snug max-w-md mx-auto">
+                Layered System Architecture for Automated Detection and Regulatory Mapping of Dark Patterns Using Transformer-Based NLP
+              </h3>
+
+              <div className="flex flex-col items-center max-w-md mx-auto">
+
+                {/* Layer 1: Data Input Layer */}
+                <div className="w-full flex items-center justify-between mb-1">
+                  <div className="flex-1 bg-blue-100 border border-blue-300 rounded-lg py-2.5 flex justify-center">
+                    <span className="bg-white border border-blue-300 rounded-md px-5 py-1.5 text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+                      <i className="fas fa-link text-blue-500 text-[10px]"></i> URL Input
+                    </span>
                   </div>
-                  <div className="flex items-center justify-center space-x-8 text-xs text-gray-500 font-medium">
-                    <span>URL Input</span>
-                    <span>Scraper</span>
-                    <span>LayoutLM AI</span>
-                    <span>Report</span>
-                  </div>
-                  <p className="text-gray-400 text-sm mt-4">System Architecture Diagram</p>
+                  <span className="text-[9px] text-blue-400 font-semibold italic ml-3 whitespace-nowrap">Data Input Layer</span>
                 </div>
+
+                <div className="flex justify-center w-full my-1"><i className="fas fa-arrow-down text-blue-300 text-sm"></i></div>
+
+                {/* Layer 2: Website Preprocessing Layer */}
+                <div className="w-full flex items-start justify-between mb-1">
+                  <div className="flex-1 bg-blue-200/60 border border-blue-300 rounded-lg py-3 px-4">
+                    <p className="text-[9px] text-blue-600 font-semibold italic text-center mb-1.5">Web Services</p>
+                    <div className="flex flex-col items-center gap-1.5">
+                      <span className="bg-white border border-blue-300 rounded-md px-5 py-1.5 text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+                        <i className="fas fa-spider text-blue-500 text-[10px]"></i> Selenium Client
+                      </span>
+                      <span className="bg-white border border-blue-300 rounded-md px-5 py-1.5 text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+                        <i className="fas fa-robot text-blue-500 text-[10px]"></i> Gemini API
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-[9px] text-blue-400 font-semibold italic ml-3 whitespace-nowrap mt-1">Website<br/>Preprocessing Layer</span>
+                </div>
+
+                <div className="flex justify-center w-full my-1"><i className="fas fa-arrow-down text-blue-300 text-sm"></i></div>
+
+                {/* Layer 3: Extracted Data */}
+                <div className="w-full flex items-center justify-between mb-1">
+                  <div className="flex-1 bg-blue-100 border border-blue-300 rounded-lg py-2.5 flex justify-center gap-3">
+                    <span className="bg-white border border-blue-300 rounded-md px-4 py-1.5 text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+                      <i className="fas fa-font text-blue-500 text-[10px]"></i> UI Text
+                    </span>
+                    <span className="bg-white border border-blue-300 rounded-md px-4 py-1.5 text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+                      <i className="fas fa-camera text-blue-500 text-[10px]"></i> Full-Page Screenshot
+                    </span>
+                  </div>
+                  <span className="text-[9px] text-blue-400 font-semibold italic ml-3 whitespace-nowrap">Extracted Data</span>
+                </div>
+
+                <div className="flex justify-center w-full my-1"><i className="fas fa-arrow-down text-blue-300 text-sm"></i></div>
+
+                {/* Layer 4: LLM Detection Layer */}
+                <div className="w-full flex items-center justify-between mb-1">
+                  <div className="flex-1 bg-blue-200/60 border border-blue-300 rounded-lg py-3 flex justify-center">
+                    <div className="bg-white border border-blue-300 rounded-md px-5 py-2 text-center flex items-center gap-2">
+                      <i className="fas fa-brain text-blue-600 text-sm"></i>
+                      <div>
+                        <p className="text-xs font-bold text-gray-800">LayoutLM</p>
+                        <p className="text-[9px] text-gray-500 leading-tight">RoBERTa-based Vision Language Model</p>
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-[9px] text-blue-400 font-semibold italic ml-3 whitespace-nowrap">LLM Detection Layer</span>
+                </div>
+
+                <div className="flex justify-center w-full my-1"><i className="fas fa-arrow-down text-blue-300 text-sm"></i></div>
+
+                {/* Layer 5: Regulatory Mapping Layer */}
+                <div className="w-full flex items-center justify-between mb-1">
+                  <div className="flex-1 bg-blue-100 border border-blue-300 rounded-lg py-2.5 flex justify-center">
+                    <span className="bg-white border border-blue-300 rounded-md px-5 py-1.5 text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+                      <i className="fas fa-gavel text-blue-500 text-[10px]"></i> Compliance Engine
+                    </span>
+                  </div>
+                  <span className="text-[9px] text-blue-400 font-semibold italic ml-3 whitespace-nowrap">Regulatory Mapping<br/>Layer</span>
+                </div>
+
+                <div className="flex justify-center w-full my-1"><i className="fas fa-arrow-down text-blue-300 text-sm"></i></div>
+
+                {/* Layer 6: Output Layer */}
+                <div className="w-full flex items-center justify-between">
+                  <div className="flex-1 bg-blue-100 border border-blue-300 rounded-lg py-2.5 flex justify-center">
+                    <span className="bg-white border border-blue-300 rounded-md px-5 py-1.5 text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+                      <i className="fas fa-file-alt text-blue-500 text-[10px]"></i> Report
+                    </span>
+                  </div>
+                  <span className="text-[9px] text-blue-400 font-semibold italic ml-3 whitespace-nowrap">Output Layer</span>
+                </div>
+
               </div>
             </div>
             <figcaption className="text-center text-sm text-gray-500 mt-3">
-              <i className="fas fa-image mr-1"></i> Fig 1. End-to-end system architecture of the Dark Pattern Detection pipeline
+              Figure 2: System Architecture
             </figcaption>
           </figure>
 
